@@ -1,0 +1,12 @@
+{
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "env": {
+    "EVOLUTION_API_URL": "https://sua-evolution-api.com",
+    "EVOLUTION_API_KEY": "",
+    "EVOLUTION_INSTANCE": "bella-estetica-wp",
+    "N8N_WEBHOOK_URL": "https://seu-n8n.app.n8n.cloud/webhook/whatsapp-in",
+    "ANTHROPIC_API_KEY": ""
+  }
+}
