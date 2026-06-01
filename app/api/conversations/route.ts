@@ -1,30 +1,18 @@
 import { NextResponse } from "next/server";
 
-const EVOLUTION_URL = process.env.EVOLUTION_API_URL || "";
-const EVOLUTION_KEY = process.env.EVOLUTION_API_KEY || "";
-const INSTANCE = process.env.EVOLUTION_INSTANCE || "";
+const N8N_PROXY = "https://n8n-n8n-webhook.tkukfu.easypanel.host/webhook/10892952-8a56-4612-8a9d-6601fb38b2be";
 
 export async function GET() {
   try {
-    const res = await fetch(`${EVOLUTION_URL}/chat/findChats/${INSTANCE}`, {
-      method: "POST",
-      headers: {
-        "apikey": EVOLUTION_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
-      cache: "no-store",
-    });
-
-    if (!res.ok) throw new Error(`Evolution API error: ${res.status}`);
-
+    const res = await fetch(N8N_PROXY, { cache: "no-store" });
     const data = await res.json();
 
-    const conversations = (Array.isArray(data) ? data : []).map((chat: any) => ({
-      id: chat.id,
-      phone: chat.id?.replace("@s.whatsapp.net", ""),
-      name: chat.name || chat.pushName || chat.id?.replace("@s.whatsapp.net", ""),
-      lastMsg: chat.lastMessage?.message?.conversation || chat.lastMessage?.message?.extendedTextMessage?.text || "...",
+    const chats = Array.isArray(data) ? data : [data];
+
+    const conversations = chats.map((chat: any) => ({
+      phone: chat.remoteJid?.replace("@s.whatsapp.net", ""),
+      name: chat.pushName || chat.remoteJid?.replace("@s.whatsapp.net", ""),
+      lastMsg: chat.lastMessage?.message?.conversation || "...",
       time: chat.lastMessage?.messageTimestamp
         ? new Date(chat.lastMessage.messageTimestamp * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
         : "",
@@ -33,7 +21,6 @@ export async function GET() {
 
     return NextResponse.json(conversations);
   } catch (err: any) {
-    console.error("Conversations error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
