@@ -1,244 +1,458 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect, useCallback } from "react";
+
+interface ConnectionStatus {
+  connected: boolean;
+  lastSync: string | null;
+}
+
+interface QRData {
+  base64?: string;
+  code?: string;
+  count?: number;
+}
 
 export default function Settings() {
-  const [saved, setSaved] = useState(false);
+  const [evolutionUrl, setEvolutionUrl] = useState(
+    process.env.NEXT_PUBLIC_EVOLUTION_API_URL || ""
+  );
+  const [apiKey, setApiKey] = useState(
+    process.env.NEXT_PUBLIC_EVOLUTION_API_KEY || ""
+  );
+  const [instance, setInstance] = useState(
+    process.env.NEXT_PUBLIC_EVOLUTION_INSTANCE || ""
+  );
+  const [n8nUrl, setN8nUrl] = useState(
+    process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || ""
+  );
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
+    connected: false,
+    lastSync: null,
+  });
+  const [testingConnection, setTestingConnection] = useState(false);
+
+  // QR Code states
+  const [qrData, setQrData] = useState<QRData | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [qrPolling, setQrPolling] = useState(false);
+  const [instanceStatus, setInstanceStatus] = useState<string>("unknown");
+
+  const testConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const response = await fetch(
+        `${evolutionUrl}/instance/fetchInstances`,
+        {
+          headers: { apikey: apiKey },
+        }
+      );
+      if (response.ok) {
+        setConnectionStatus({
+          connected: true,
+          lastSync: new Date().toLocaleTimeString("pt-BR"),
+        });
+      } else {
+        setConnectionStatus({ connected: false, lastSync: null });
+      }
+    } catch {
+      setConnectionStatus({ connected: false, lastSync: null });
+    } finally {
+      setTestingConnection(false);
+    }
   };
 
+  const checkInstanceStatus = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${evolutionUrl}/instance/connectionState/${instance}`,
+        { headers: { apikey: apiKey } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const state = data?.instance?.state || data?.state || "unknown";
+        setInstanceStatus(state);
+        return state;
+      }
+    } catch {
+      setInstanceStatus("unknown");
+    }
+    return "unknown";
+  }, [evolutionUrl, instance, apiKey]);
+
+  const generateQRCode = async () => {
+    setQrLoading(true);
+    setQrError(null);
+    setQrData(null);
+
+    try {
+      // First check current state
+      const state = await checkInstanceStatus();
+
+      if (state === "open") {
+        setQrError("Instância já está conectada! Desconecte antes de gerar um novo QR Code.");
+        setQrLoading(false);
+        return;
+      }
+
+      // Request QR Code
+      const response = await fetch(
+        `${evolutionUrl}/instance/connect/${instance}`,
+        { headers: { apikey: apiKey } }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data?.base64 || data?.qrcode?.base64) {
+        setQrData({
+          base64: data.base64 || data.qrcode?.base64,
+          code: data.code || data.qrcode?.code,
+          count: data.count,
+        });
+        setQrPolling(true);
+      } else {
+        setQrError("QR Code não retornado. Tente novamente.");
+      }
+    } catch (err) {
+      setQrError(
+        err instanceof Error ? err.message : "Erro ao gerar QR Code"
+      );
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const disconnectInstance = async () => {
+    if (!confirm("Tem certeza? Isso vai desconectar o WhatsApp atual.")) return;
+    try {
+      await fetch(`${evolutionUrl}/instance/logout/${instance}`, {
+        method: "DELETE",
+        headers: { apikey: apiKey },
+      });
+      setInstanceStatus("close");
+      setQrData(null);
+      setQrPolling(false);
+      alert("Instância desconectada com sucesso.");
+    } catch {
+      alert("Erro ao desconectar. Tente pelo painel do N8N.");
+    }
+  };
+
+  // Poll connection status while QR is shown
+  useEffect(() => {
+    if (!qrPolling) return;
+
+    const interval = setInterval(async () => {
+      const state = await checkInstanceStatus();
+      if (state === "open") {
+        setQrPolling(false);
+        setQrData(null);
+        setConnectionStatus({
+          connected: true,
+          lastSync: new Date().toLocaleTimeString("pt-BR"),
+        });
+        alert("✅ WhatsApp conectado com sucesso!");
+      }
+    }, 3000);
+
+    // Stop polling after 2 minutes
+    const timeout = setTimeout(() => {
+      setQrPolling(false);
+      setQrError("QR Code expirado. Gere um novo.");
+      setQrData(null);
+    }, 120000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [qrPolling, checkInstanceStatus]);
+
+  // Check instance status on mount
+  useEffect(() => {
+    if (evolutionUrl && apiKey && instance) {
+      checkInstanceStatus();
+    }
+  }, [checkInstanceStatus, evolutionUrl, apiKey, instance]);
+
+  const statusColor =
+    instanceStatus === "open"
+      ? "#22c55e"
+      : instanceStatus === "close"
+      ? "#ef4444"
+      : "#f59e0b";
+
+  const statusLabel =
+    instanceStatus === "open"
+      ? "Conectado"
+      : instanceStatus === "close"
+      ? "Desconectado"
+      : "Verificando...";
+
   return (
-    <div style={{ padding: "36px 40px", maxWidth: 900 }}>
-      <div style={{ marginBottom: 36 }}>
-        <div className="font-display" style={{ fontSize: 32, fontWeight: 300, color: "#F5F0E8" }}>
-          Configurações
+    <div style={{ padding: "32px", maxWidth: "700px", color: "#f1f5f9" }}>
+      <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "4px" }}>
+        Configurações
+      </h1>
+      <p style={{ color: "#94a3b8", marginBottom: "32px" }}>
+        Configure a integração com Evolution API, N8N e Gemini AI
+      </p>
+
+      {/* Evolution API Card */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+          <span style={{ fontSize: "20px" }}>⚡</span>
+          <div>
+            <h2 style={{ fontSize: "17px", fontWeight: "600", margin: 0 }}>Evolution API</h2>
+            <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>Conexão WhatsApp Business</p>
+          </div>
         </div>
-        <div style={{ color: "#5A5248", fontSize: 13, marginTop: 4 }}>
-          Configure a integração com Evolution API, N8N e Claude AI
+
+        <label style={labelStyle}>URL DA EVOLUTION API</label>
+        <input
+          style={inputStyle}
+          value={evolutionUrl}
+          onChange={(e) => setEvolutionUrl(e.target.value)}
+          placeholder="https://n8n-evolution.tkukfu.easypanel.host"
+        />
+
+        <label style={labelStyle}>API KEY</label>
+        <input
+          style={inputStyle}
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="Sua API Key"
+        />
+
+        <label style={labelStyle}>NOME DA INSTÂNCIA</label>
+        <input
+          style={inputStyle}
+          value={instance}
+          onChange={(e) => setInstance(e.target.value)}
+          placeholder="marcio"
+        />
+
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span
+              style={{
+                width: "10px",
+                height: "10px",
+                borderRadius: "50%",
+                backgroundColor: connectionStatus.connected ? "#22c55e" : "#ef4444",
+                display: "inline-block",
+              }}
+            />
+            <span style={{ fontSize: "13px", color: "#94a3b8" }}>
+              {connectionStatus.connected
+                ? `Última sincronização: ${connectionStatus.lastSync}`
+                : "Não testado"}
+            </span>
+          </div>
+          <button
+            onClick={testConnection}
+            disabled={testingConnection}
+            style={secondaryBtnStyle}
+          >
+            {testingConnection ? "Testando..." : "Testar Conexão"}
+          </button>
         </div>
       </div>
 
-      {/* Section: Evolution API */}
-      <Section title="Evolution API" icon="⚡" subtitle="Conexão WhatsApp Business">
-        <Field label="URL da Evolution API" placeholder="https://sua-evolution-api.com" defaultValue="https://api.bellastetica.com" />
-        <Field label="API Key" placeholder="sk-..." defaultValue="evo_••••••••••••••••" type="password" />
-        <Field label="Nome da Instância" placeholder="bella-estetica-wp" defaultValue="bella-estetica-wp" />
-        <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8 }}>
-          <StatusBadge active label="Conectado" />
-          <span style={{ color: "#5A5248", fontSize: 12 }}>Última sincronização: agora há pouco</span>
-          <button style={btnStyle}>Testar Conexão</button>
+      {/* QR Code Card */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "20px" }}>📱</span>
+            <div>
+              <h2 style={{ fontSize: "17px", fontWeight: "600", margin: 0 }}>Número do WhatsApp</h2>
+              <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>Conectar ou trocar número da instância</p>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: statusColor,
+                display: "inline-block",
+              }}
+            />
+            <span style={{ fontSize: "13px", color: statusColor, fontWeight: "500" }}>
+              {statusLabel}
+            </span>
+          </div>
         </div>
-      </Section>
 
-      {/* Section: N8N */}
-      <Section title="N8N Workflow" icon="🔄" subtitle="Automação de fluxos">
-        <Field label="URL do N8N" placeholder="https://seu-n8n.app.n8n.cloud" defaultValue="https://bella.app.n8n.cloud" />
-        <Field label="Webhook URL (receber mensagens)" placeholder="https://..." defaultValue="https://bella.app.n8n.cloud/webhook/whatsapp-in" />
-        <Field label="Webhook URL (enviar resposta)" placeholder="https://..." defaultValue="https://bella.app.n8n.cloud/webhook/send-message" />
-        <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8 }}>
-          <StatusBadge active label="Ativo" />
-          <button style={btnStyle}>Ver Fluxos no N8N</button>
+        {/* QR Code Display */}
+        {qrData?.base64 && (
+          <div style={{ textAlign: "center", margin: "20px 0" }}>
+            <p style={{ fontSize: "13px", color: "#94a3b8", marginBottom: "16px" }}>
+              Abra o WhatsApp no celular → Aparelhos conectados → Conectar aparelho → Escanear QR Code
+            </p>
+            <div
+              style={{
+                display: "inline-block",
+                padding: "16px",
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+              }}
+            >
+              <img
+                src={
+                  qrData.base64.startsWith("data:")
+                    ? qrData.base64
+                    : `data:image/png;base64,${qrData.base64}`
+                }
+                alt="QR Code WhatsApp"
+                style={{ width: "220px", height: "220px", display: "block" }}
+              />
+            </div>
+            {qrPolling && (
+              <p style={{ fontSize: "13px", color: "#f59e0b", marginTop: "12px" }}>
+                ⏳ Aguardando leitura do QR Code... (expira em 2 minutos)
+              </p>
+            )}
+          </div>
+        )}
+
+        {qrError && (
+          <div
+            style={{
+              backgroundColor: "#1e1e2e",
+              border: "1px solid #ef4444",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              marginBottom: "16px",
+              fontSize: "13px",
+              color: "#ef4444",
+            }}
+          >
+            ⚠️ {qrError}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <button
+            onClick={generateQRCode}
+            disabled={qrLoading || qrPolling}
+            style={{
+              ...primaryBtnStyle,
+              opacity: qrLoading || qrPolling ? 0.6 : 1,
+              cursor: qrLoading || qrPolling ? "not-allowed" : "pointer",
+            }}
+          >
+            {qrLoading
+              ? "Gerando..."
+              : qrData
+              ? "🔄 Gerar Novo QR Code"
+              : "📲 Gerar QR Code"}
+          </button>
+
+          {instanceStatus === "open" && (
+            <button onClick={disconnectInstance} style={dangerBtnStyle}>
+              Desconectar Número
+            </button>
+          )}
+
+          <button onClick={checkInstanceStatus} style={secondaryBtnStyle}>
+            Verificar Status
+          </button>
         </div>
-      </Section>
 
-      {/* Section: Claude AI */}
-      <Section title="Claude AI (Anthropic)" icon="🤖" subtitle="Motor de inteligência artificial">
-        <Field label="Anthropic API Key" placeholder="sk-ant-..." type="password" defaultValue="sk-ant-••••••••••••••" />
-        <Field label="Modelo" placeholder="claude-sonnet-4-20250514" defaultValue="claude-sonnet-4-20250514" />
-        <Field label="Temperatura (0.0 – 1.0)" placeholder="0.7" defaultValue="0.7" />
-        <Field label="Máximo de tokens por resposta" placeholder="500" defaultValue="500" />
-      </Section>
+        <p style={{ fontSize: "12px", color: "#64748b", marginTop: "16px" }}>
+          💡 Para trocar de número: clique em "Desconectar Número" e depois "Gerar QR Code" para escanear com o novo aparelho.
+        </p>
+      </div>
 
-      {/* Section: Clinic */}
-      <Section title="Dados da Clínica" icon="✦" subtitle="Informações exibidas para clientes">
-        <Field label="Nome da Clínica" defaultValue="Clínica Bella Estética" />
-        <Field label="Telefone de Contato" defaultValue="(11) 3000-0000" />
-        <Field label="Endereço" defaultValue="Rua das Flores, 123 — São Paulo, SP" />
-        <Field label="Horário de Funcionamento" defaultValue="Seg–Sex: 8h–19h | Sáb: 8h–14h" />
-        <Field label="Mensagem de boas-vindas" defaultValue="Olá! 😊 Bem-vinda à Bella Estética! Sou a BeautyBot, sua assistente virtual. Como posso ajudar hoje?" />
-        <Field label="Mensagem fora do horário" defaultValue="Nossa equipe está fora do horário de atendimento. Em breve uma consultora irá responder você!" />
-      </Section>
-
-      {/* N8N JSON Flow */}
-      <Section title="Fluxo N8N — JSON para Importar" icon="📋" subtitle="Cole no N8N: File → Import from clipboard">
-        <div
-          style={{
-            background: "#0A0A0F",
-            border: "1px solid rgba(201,169,110,0.15)",
-            borderRadius: 10,
-            padding: "16px",
-            fontFamily: "monospace",
-            fontSize: 11,
-            color: "#9A8F7E",
-            lineHeight: 1.6,
-            maxHeight: 240,
-            overflowY: "auto",
-          }}
-        >
-          {`{
-  "name": "BeautyBot - WhatsApp Atendimento",
-  "nodes": [
-    {
-      "name": "Webhook Evolution",
-      "type": "n8n-nodes-base.webhook",
-      "parameters": {
-        "path": "whatsapp-in",
-        "method": "POST"
-      }
-    },
-    {
-      "name": "Extrair Mensagem",
-      "type": "n8n-nodes-base.set",
-      "parameters": {
-        "values": {
-          "phone": "={{ $json.data.key.remoteJid }}",
-          "message": "={{ $json.data.message.conversation }}"
-        }
-      }
-    },
-    {
-      "name": "Claude AI",
-      "type": "n8n-nodes-base.httpRequest",
-      "parameters": {
-        "url": "https://api.anthropic.com/v1/messages",
-        "method": "POST",
-        "headers": {
-          "x-api-key": "{{ $env.ANTHROPIC_KEY }}",
-          "anthropic-version": "2023-06-01"
-        },
-        "body": {
-          "model": "claude-sonnet-4-20250514",
-          "max_tokens": 500,
-          "messages": [{
-            "role": "user",
-            "content": "={{ $json.message }}"
-          }]
-        }
-      }
-    },
-    {
-      "name": "Enviar Resposta Evolution",
-      "type": "n8n-nodes-base.httpRequest",
-      "parameters": {
-        "url": "={{ $env.EVOLUTION_URL }}/message/sendText/{{ $env.INSTANCE }}",
-        "method": "POST",
-        "body": {
-          "number": "={{ $json.phone }}",
-          "text": "={{ $json.content[0].text }}"
-        }
-      }
-    }
-  ]
-}`}
+      {/* N8N Card */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+          <span style={{ fontSize: "20px" }}>🔄</span>
+          <div>
+            <h2 style={{ fontSize: "17px", fontWeight: "600", margin: 0 }}>N8N Workflow</h2>
+            <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>Automação de fluxos</p>
+          </div>
         </div>
-        <button
-          onClick={() => navigator.clipboard?.writeText("flow-json")}
-          style={{ ...btnStyle, marginTop: 10 }}
-        >
-          📋 Copiar JSON
-        </button>
-      </Section>
 
-      {/* Save */}
-      <div style={{ paddingBottom: 40 }}>
-        <button
-          onClick={handleSave}
-          style={{
-            background: saved
-              ? "linear-gradient(135deg, #25D366 0%, #128C7E 100%)"
-              : "linear-gradient(135deg, #C9A96E 0%, #8B5E3C 100%)",
-            border: "none",
-            color: saved ? "#fff" : "#0A0A0F",
-            borderRadius: 10,
-            padding: "12px 32px",
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "DM Sans, sans-serif",
-            transition: "background 0.3s",
-          }}
-        >
-          {saved ? "✓ Configurações salvas!" : "Salvar Configurações"}
-        </button>
+        <label style={labelStyle}>WEBHOOK URL</label>
+        <input
+          style={inputStyle}
+          value={n8nUrl}
+          onChange={(e) => setN8nUrl(e.target.value)}
+          placeholder="https://n8n-n8n-webhook.tkukfu.easypanel.host/webhook/evolution-marcio"
+        />
       </div>
     </div>
   );
 }
 
-const btnStyle: React.CSSProperties = {
-  background: "rgba(201,169,110,0.1)",
-  border: "1px solid rgba(201,169,110,0.2)",
-  color: "#C9A96E",
-  borderRadius: 8,
-  padding: "6px 16px",
-  fontSize: 12,
-  cursor: "pointer",
-  fontFamily: "DM Sans, sans-serif",
+// Styles
+const cardStyle: React.CSSProperties = {
+  backgroundColor: "#0f172a",
+  border: "1px solid #1e293b",
+  borderRadius: "12px",
+  padding: "24px",
+  marginBottom: "20px",
 };
 
-function Section({ title, icon, subtitle, children }: { title: string; icon: string; subtitle: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        background: "#12121A",
-        border: "1px solid rgba(201,169,110,0.1)",
-        borderRadius: 16,
-        padding: "24px 28px",
-        marginBottom: 20,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-        <span style={{ fontSize: 18 }}>{icon}</span>
-        <div className="font-display" style={{ fontSize: 20, color: "#F5F0E8", fontWeight: 400 }}>{title}</div>
-      </div>
-      <div style={{ color: "#5A5248", fontSize: 12, marginBottom: 20 }}>{subtitle}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>{children}</div>
-    </div>
-  );
-}
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: "11px",
+  fontWeight: "600",
+  color: "#64748b",
+  letterSpacing: "0.08em",
+  marginBottom: "6px",
+  marginTop: "16px",
+};
 
-function Field({ label, placeholder, defaultValue, type }: { label: string; placeholder?: string; defaultValue?: string; type?: string }) {
-  return (
-    <div>
-      <label style={{ color: "#9A8F7E", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
-        {label}
-      </label>
-      <input
-        type={type || "text"}
-        placeholder={placeholder}
-        defaultValue={defaultValue}
-        style={{
-          width: "100%",
-          background: "#0A0A0F",
-          border: "1px solid rgba(201,169,110,0.15)",
-          borderRadius: 8,
-          padding: "10px 14px",
-          color: "#F5F0E8",
-          fontSize: 13,
-          fontFamily: "DM Sans, sans-serif",
-          outline: "none",
-        }}
-      />
-    </div>
-  );
-}
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  backgroundColor: "#1e293b",
+  border: "1px solid #334155",
+  borderRadius: "8px",
+  padding: "10px 14px",
+  color: "#f1f5f9",
+  fontSize: "14px",
+  outline: "none",
+  boxSizing: "border-box",
+};
 
-function StatusBadge({ active, label }: { active: boolean; label: string }) {
-  return (
-    <span
-      style={{
-        background: active ? "rgba(37,211,102,0.1)" : "rgba(90,82,72,0.3)",
-        color: active ? "#25D366" : "#9A8F7E",
-        border: `1px solid ${active ? "rgba(37,211,102,0.2)" : "rgba(90,82,72,0.3)"}`,
-        borderRadius: 8,
-        padding: "4px 12px",
-        fontSize: 11,
-        fontWeight: 500,
-      }}
-    >
-      {active ? "● " : "○ "}{label}
-    </span>
-  );
-}
+const primaryBtnStyle: React.CSSProperties = {
+  backgroundColor: "#7c3aed",
+  color: "#fff",
+  border: "none",
+  borderRadius: "8px",
+  padding: "10px 18px",
+  fontSize: "14px",
+  fontWeight: "600",
+  cursor: "pointer",
+};
+
+const secondaryBtnStyle: React.CSSProperties = {
+  backgroundColor: "transparent",
+  color: "#94a3b8",
+  border: "1px solid #334155",
+  borderRadius: "8px",
+  padding: "9px 16px",
+  fontSize: "13px",
+  cursor: "pointer",
+};
+
+const dangerBtnStyle: React.CSSProperties = {
+  backgroundColor: "transparent",
+  color: "#ef4444",
+  border: "1px solid #ef4444",
+  borderRadius: "8px",
+  padding: "9px 16px",
+  fontSize: "13px",
+  cursor: "pointer",
+};
