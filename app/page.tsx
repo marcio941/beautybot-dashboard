@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import Dashboard from "@/components/Dashboard";
 import Appointments from "@/components/Appointments";
@@ -11,21 +11,42 @@ export type Page = "dashboard" | "appointments" | "conversations" | "services" |
 
 export default function Home() {
   const [activePage, setActivePage] = useState<Page>("dashboard");
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("beautybot-theme") as "dark" | "light" | null;
+    if (saved) setTheme(saved);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    localStorage.setItem("beautybot-theme", next);
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const renderPage = () => {
     switch (activePage) {
-      case "dashboard": return <Dashboard />;
-      case "appointments": return <Appointments />;
+      case "dashboard":     return <Dashboard />;
+      case "appointments":  return <Appointments />;
       case "conversations": return <Conversations />;
-      case "services": return <Services />;
-      case "settings": return <Settings />;
+      case "services":      return <Services />;
+      case "settings":      return <Settings />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-[#0A0A0F] overflow-hidden">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
-      <main className="flex-1 overflow-auto">
+    <div style={{ display: "flex", height: "100vh", background: "var(--bg-deep)", overflow: "hidden" }}>
+      <Sidebar
+        activePage={activePage}
+        setActivePage={setActivePage}
+        theme={theme}
+        toggleTheme={toggleTheme}
+      />
+      <main style={{ flex: 1, overflow: "auto" }}>
         {renderPage()}
       </main>
     </div>
