@@ -1,54 +1,34 @@
-"use client";
-import { useState, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import Dashboard from "@/components/Dashboard";
-import Appointments from "@/components/Appointments";
-import Conversations from "@/components/Conversations";
-import Services from "@/components/Services";
-import Settings from "@/components/Settings";
+'use client'
+import { useState } from 'react'
+import Sidebar from '@/components/Sidebar'
+import Dashboard from '@/components/Dashboard'
+import Appointments from '@/components/Appointments'
+import Conversations from '@/components/Conversations'
+import Services from '@/components/Services'
+import Settings from '@/components/Settings'
 
-export type Page = "dashboard" | "appointments" | "conversations" | "services" | "settings";
+const VIEWS: Record<string, React.ReactNode> = {}
 
 export default function Home() {
-  const [activePage, setActivePage] = useState<Page>("dashboard");
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [view, setView] = useState('dashboard')
 
-  useEffect(() => {
-    const saved = localStorage.getItem("beautybot-theme") as "dark" | "light" | null;
-    if (saved) setTheme(saved);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    localStorage.setItem("beautybot-theme", next);
-  };
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-
-  const renderPage = () => {
-    switch (activePage) {
-      case "dashboard":     return <Dashboard />;
-      case "appointments":  return <Appointments />;
-      case "conversations": return <Conversations />;
-      case "services":      return <Services />;
-      case "settings":      return <Settings />;
+  const renderView = () => {
+    switch (view) {
+      case 'dashboard':    return <Dashboard />
+      case 'appointments': return <Appointments />
+      case 'conversations':return <Conversations />
+      case 'services':     return <Services />
+      case 'settings':     return <Settings />
+      default:             return <Dashboard />
     }
-  };
+  }
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "var(--bg-deep)", overflow: "hidden" }}>
-      <Sidebar
-        activePage={activePage}
-        setActivePage={setActivePage}
-        theme={theme}
-        toggleTheme={toggleTheme}
-      />
-      <main style={{ flex: 1, overflow: "auto" }}>
-        {renderPage()}
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <Sidebar active={view} onNavigate={setView} />
+      <main style={{ flex: 1, padding: '28px 30px', minWidth: 0 }}>
+        {renderView()}
       </main>
     </div>
-  );
+  )
 }
