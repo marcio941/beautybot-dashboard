@@ -1,4 +1,6 @@
 'use client'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const NAV = [
   { id: 'dashboard',     icon: '▦', label: 'Visão Geral',     badge: 0 },
@@ -16,6 +18,15 @@ interface Props {
 }
 
 export default function Sidebar({ active, onNavigate }: Props) {
+  const router = useRouter()
+  const supabase = createClient()
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
+
   return (
     <aside style={{
       width: 240, flexShrink: 0,
@@ -89,10 +100,22 @@ export default function Sidebar({ active, onNavigate }: Props) {
           width: 36, height: 36, borderRadius: '50%', background: '#fff', color: '#227069',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14,
         }}>A</div>
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <b style={{ fontSize: 13, display: 'block' }}>Admin</b>
           <span style={{ fontSize: 11, opacity: 0.8 }}>Clínica Bella Estética</span>
         </div>
+        <button
+          onClick={handleLogout}
+          title="Sair"
+          style={{
+            border: 'none', background: 'rgba(255,255,255,.16)', color: '#fff',
+            cursor: 'pointer', width: 32, height: 32, borderRadius: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, flexShrink: 0,
+          }}
+        >
+          ⏻
+        </button>
       </div>
     </aside>
   )
