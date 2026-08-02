@@ -96,15 +96,32 @@ export default function Dashboard() {
   useEffect(() => {
     async function load() {
       setLoading(true)
-      const [{ data: appts }, { data: lds }, { data: convs }] = await Promise.all([
-        supabase.from('appointments').select('*').order('appointment_date', { ascending: true }),
-        supabase.from('leads').select('*').order('created_at', { ascending: false }),
-        supabase.from('conversas_pendentes').select('*').order('created_at', { ascending: false }),
-      ])
-      setAppointments(appts ?? [])
-      setLeads(lds ?? [])
-      setConversas(convs ?? [])
-      setLoading(false)
+      try {
+        const [
+          { data: appts, error: apptsError },
+          { data: lds, error: leadsError },
+          { data: convs, error: convsError },
+        ] = await Promise.all([
+          supabase.from('appointments').select('*').order('appointment_date', { ascending: true }),
+          supabase.from('leads').select('*').order('created_at', { ascending: false }),
+          supabase.from('conversas_pendentes').select('*').order('created_at', { ascending: false }),
+        ])
+
+        if (apptsError) console.error('Erro ao buscar appointments:', apptsError.message)
+        if (leadsError) console.error('Erro ao buscar leads:', leadsError.message)
+        if (convsError) console.error('Erro ao buscar conversas_pendentes:', convsError.message)
+
+        setAppointments(appts ?? [])
+        setLeads(lds ?? [])
+        setConversas(convs ?? [])
+      } catch (err) {
+        console.error('Erro inesperado ao carregar dados do dashboard:', err)
+        setAppointments([])
+        setLeads([])
+        setConversas([])
+      } finally {
+        setLoading(false)
+      }
     }
     load()
 
@@ -407,6 +424,7 @@ export default function Dashboard() {
                 </div>
               )
             })}
+            {!loading && leads.length === 0 && <p style={{ color:'#9BB0AD', fontSize:13 }}>Nenhum lead encontrado.</p>}
           </div>
         </section>
       </div>
