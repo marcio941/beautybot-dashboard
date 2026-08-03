@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useProfile } from '@/lib/hooks/useProfile'
 
 /* ─── tipos ─── */
 interface Lead {
@@ -79,6 +80,7 @@ const HEAT_COLORS = ['#F2F7F6','#CFE7E3','#9CCFC8','#5FB2A8','#227069']
 
 /* ═══════════════════════════════════════════════ */
 export default function Dashboard() {
+  const { userName, accountName, loading: profileLoading } = useProfile()
   const [period, setPeriod]           = useState('7d')
   const [selIdx, setSelIdx]           = useState(0)
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -141,10 +143,13 @@ export default function Dashboard() {
       <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:22, flexWrap:'wrap', gap:12 }}>
         <div>
           <h2 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:30, color:'#227069' }}>
-            Bom dia, <span style={{ background:'linear-gradient(0deg,#F6BE4F 0 30%,transparent 30%)', padding:'0 2px' }}>Admin</span>
+            Bom dia, <span style={{ background:'linear-gradient(0deg,#F6BE4F 0 30%,transparent 30%)', padding:'0 2px' }}>
+              {profileLoading ? 'Carregando...' : (userName || 'Usuário')}
+            </span>
           </h2>
           <p style={{ fontSize:13, color:'#6E807D' }}>
-            {new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · Clínica Bella Estética
+            {new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+            {!profileLoading && ` · ${accountName || 'Sua conta'}`}
           </p>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>

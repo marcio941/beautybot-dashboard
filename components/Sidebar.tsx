@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useProfile } from '@/lib/hooks/useProfile'
 
 const NAV = [
   { id: 'dashboard',     icon: '▦', label: 'Visão Geral',     badge: 0 },
@@ -20,6 +21,10 @@ interface Props {
 export default function Sidebar({ active, onNavigate }: Props) {
   const router = useRouter()
   const supabase = createClient()
+  const { userName, accountName, loading: profileLoading } = useProfile()
+  const displayName = profileLoading ? 'Carregando...' : (userName || 'Usuário')
+  const displayAccount = profileLoading ? '' : (accountName || 'Sua conta')
+  const avatarInitial = userName ? userName.trim().charAt(0).toUpperCase() : '?'
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -99,10 +104,10 @@ export default function Sidebar({ active, onNavigate }: Props) {
         <div style={{
           width: 36, height: 36, borderRadius: '50%', background: '#fff', color: '#227069',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14,
-        }}>A</div>
+        }}>{avatarInitial}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <b style={{ fontSize: 13, display: 'block' }}>Admin</b>
-          <span style={{ fontSize: 11, opacity: 0.8 }}>Clínica Bella Estética</span>
+          <b style={{ fontSize: 13, display: 'block' }}>{displayName}</b>
+          <span style={{ fontSize: 11, opacity: 0.8 }}>{displayAccount}</span>
         </div>
         <button
           onClick={handleLogout}
