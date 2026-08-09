@@ -1,5 +1,7 @@
 'use client'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -27,6 +29,63 @@ export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
   const displayAccount = profileLoading ? '' : (accountName || 'Sua conta')
   const avatarInitial = userName ? userName.trim().charAt(0).toUpperCase() : '?'
   const logoParaExibir = logoOverride !== undefined ? logoOverride : logoUrl
+
+  const [qrModalOpen, setQrModalOpen] = useState(false)
+  const [qrImage, setQrImage] = useState<string | null>(null)
+  const [qrLoading, setQrLoading] = useState(false)
+  const [qrError, setQrError] = useState<string | null>(null)
+  const [wppConectado, setWppConectado] = useState(true)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  function pararPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }
+
+  function iniciarPolling() {
+    pararPolling()
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch('/api/whatsapp/status')
+        const data = await res.json()
+        if (res.ok && data.state === 'open') {
+          setWppConectado(true)
+          pararPolling()
+          setQrModalOpen(false)
+        }
+      } catch {
+        // falha pontual do polling: ignora e tenta de novo no próximo tick
+      }
+    }, 4000)
+  }
+
+  async function abrirModalQr() {
+    setQrModalOpen(true)
+    setQrError(null)
+    setQrImage(null)
+    setQrLoading(true)
+    try {
+      const res = await fetch('/api/whatsapp/connect')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Não foi possível gerar o QR code.')
+      if (!data.base64) throw new Error('QR code não retornado pela Evolution API.')
+      setQrImage(data.base64)
+      iniciarPolling()
+    } catch (err: any) {
+      setQrError(err.message || 'Erro ao conectar com o WhatsApp.')
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
+  function fecharModalQr() {
+    setQrModalOpen(false)
+    pararPolling()
+  }
+
+  useEffect(() => pararPolling, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -56,14 +115,23 @@ export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
       </div>
 
       {/* WPP Status */}
-      <div style={{
-        background: 'rgba(255,255,255,.16)', border: '1px solid rgba(255,255,255,.3)',
-        borderRadius: 12, padding: '9px 12px', fontSize: 12, fontWeight: 600,
-        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 26,
-      }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#7CF5A8', boxShadow: '0 0 8px #7CF5A8', display: 'inline-block' }} />
-        WhatsApp Conectado
-      </div>
+      <button
+        onClick={abrirModalQr}
+        style={{
+          background: 'rgba(255,255,255,.16)', border: '1px solid rgba(255,255,255,.3)',
+          borderRadius: 12, padding: '9px 12px', fontSize: 12, fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 26,
+          width: '100%', cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
+        }}
+      >
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: wppConectado ? '#7CF5A8' : '#F6BE4F',
+          boxShadow: wppConectado ? '0 0 8px #7CF5A8' : '0 0 8px #F6BE4F',
+          display: 'inline-block', flexShrink: 0,
+        }} />
+        {wppConectado ? 'WhatsApp Conectado' : 'Reconectar WhatsApp'}
+      </button>
 
       {/* Nav */}
       <div style={{ fontSize: 10, letterSpacing: '0.25em', opacity: 0.7, padding: '0 10px 10px', fontWeight: 600 }}>MENU</div>
@@ -129,9 +197,61 @@ export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
             fontSize: 14, flexShrink: 0,
           }}
         >
-          ⏻
+          <LogOut size={15} />
         </button>
       </div>
+
+      {qrModalOpen && (
+        <div
+          onClick={fecharModalQr}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 20, padding: 28, width: 320,
+              textAlign: 'center', color: '#1c1c1c', fontFamily: 'inherit',
+            }}
+          >
+            <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700 }}>Conectar WhatsApp</h3>
+            <p style={{ margin: '0 0 18px', fontSize: 12.5, color: '#666' }}>
+              Abra o WhatsApp no celular, vá em Aparelhos conectados e escaneie o código abaixo.
+            </p>
+
+            {qrLoading && (
+              <div style={{ padding: '40px 0', fontSize: 13, color: '#666' }}>Gerando QR code...</div>
+            )}
+
+            {!qrLoading && qrError && (
+              <div style={{ padding: '20px 0', fontSize: 13, color: '#c0392b' }}>{qrError}</div>
+            )}
+
+            {!qrLoading && !qrError && qrImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={qrImage}
+                alt="QR code do WhatsApp"
+                style={{ width: 220, height: 220, margin: '0 auto 14px', display: 'block', borderRadius: 12 }}
+              />
+            )}
+
+            <button
+              onClick={fecharModalQr}
+              style={{
+                marginTop: 8, border: 'none', background: '#eee', color: '#333',
+                fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600,
+                padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
+              }}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

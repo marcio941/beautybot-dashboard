@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
+import LeadDetailModal from '@/components/LeadDetailModal'
 
 /* ─── tipos ─── */
 interface Lead {
@@ -11,6 +12,12 @@ interface Lead {
   status: string
   created_at: string
   notes: string | null
+  origem: string | null
+  nicho: string | null
+  score: number | null
+  score_motivo: string | null
+  dores: unknown[] | null
+  gancho: string | null
 }
 
 interface Appointment {
@@ -80,13 +87,15 @@ const HEAT_COLORS = ['#F2F7F6','#CFE7E3','#9CCFC8','#5FB2A8','#227069']
 
 /* ═══════════════════════════════════════════════ */
 export default function Dashboard() {
-  const { userName, accountName, loading: profileLoading } = useProfile()
+  const { userName, accountName, categoriasKanban, loading: profileLoading } = useProfile()
   const [period, setPeriod]           = useState('7d')
   const [selIdx, setSelIdx]           = useState(0)
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [leads, setLeads]             = useState<Lead[]>([])
   const [conversas, setConversas]     = useState<Conversa[]>([])
   const [loading, setLoading]         = useState(true)
+  const [fichaLeadId, setFichaLeadId] = useState<string | null>(null)
+  const [atualizandoLeadId, setAtualizandoLeadId] = useState<string | null>(null)
 
   /* ── KPIs derivados ── */
   const today = new Date().toISOString().split('T')[0]
@@ -136,6 +145,22 @@ export default function Dashboard() {
   }, [])
 
   const selLead = leads[selIdx]
+
+  async function mudarStatusLead(id: string, novoStatus: string) {
+    const anterior = leads.find(l => l.id === id)?.status ?? null
+    if (anterior === novoStatus) return
+    setAtualizandoLeadId(id)
+    setLeads(prev => prev.map(l => (l.id === id ? { ...l, status: novoStatus } : l)))
+    try {
+      const { error } = await supabase.from('leads').update({ status: novoStatus }).eq('id', id)
+      if (error) throw error
+    } catch (err) {
+      console.error('Erro ao mudar status do lead:', err)
+      setLeads(prev => prev.map(l => (l.id === id ? { ...l, status: anterior ?? l.status } : l)))
+    } finally {
+      setAtualizandoLeadId(null)
+    }
+  }
 
   return (
     <div>
@@ -273,7 +298,7 @@ export default function Dashboard() {
                     {new Date(selLead.created_at).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
-                <button style={{ marginLeft:'auto', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#9B6CF0,#7c4de0)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:600, padding:'10px 18px', borderRadius:12, boxShadow:'0 6px 16px rgba(124,77,224,.3)', flexShrink:0 }}>
+                <button onClick={() => setFichaLeadId(selLead.id)} style={{ marginLeft:'auto', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#9B6CF0,#7c4de0)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:600, padding:'10px 18px', borderRadius:12, boxShadow:'0 6px 16px rgba(124,77,224,.3)', flexShrink:0 }}>
                   ✦ Ficha do lead
                 </button>
               </div>
@@ -433,6 +458,14 @@ export default function Dashboard() {
           </div>
         </section>
       </div>
+
+      <LeadDetailModal
+        lead={leads.find(l => l.id === fichaLeadId) ?? null}
+        categorias={categoriasKanban ?? []}
+        atualizando={fichaLeadId ? atualizandoLeadId === fichaLeadId : false}
+        onFechar={() => setFichaLeadId(null)}
+        onMudarStatus={mudarStatusLead}
+      />
 
       <style>{`@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(155,108,240,.25)}50%{box-shadow:0 0 0 10px rgba(155,108,240,0)}}`}</style>
     </div>
