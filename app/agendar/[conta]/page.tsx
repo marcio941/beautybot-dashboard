@@ -12,7 +12,7 @@ type Conta = {
   rotulo_segmento: string | null
   rotulo_profissional: string
 }
-type Servico = { id: string; nome: string; duracao_min: number; preco: number | null }
+type Servico = { id: string; nome: string; slug: string; duracao_min: number; preco: number | null }
 type Slot = { inicio: string; fim: string }
 type Status = 'carregando' | 'nao_encontrada' | 'carregada'
 
@@ -84,9 +84,7 @@ export default function AgendarPage() {
         if (!vivo) return
         setConta(c)
         setServicos(servs ?? [])
-        const pre = (servs ?? []).find(
-          (s: Servico) => s.id === servicoNaUrl || s.nome.toLowerCase() === (servicoNaUrl ?? '').toLowerCase()
-        )
+        const pre = (servs ?? []).find((s: Servico) => s.slug === servicoNaUrl)
         if (pre) setServicoId(pre.id)
         setStatus('carregada')
       } catch {
