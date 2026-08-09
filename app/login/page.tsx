@@ -20,25 +20,51 @@ export default function LoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(180deg,#F6FAF9,#EDF4F2)',
+        padding: 24,
+        background: `
+          radial-gradient(circle at 18% 18%, rgba(46,143,135,.20), transparent 42%),
+          radial-gradient(circle at 82% 78%, rgba(58,167,157,.16), transparent 45%),
+          linear-gradient(180deg,#F6FAF9,#EDF4F2)
+        `,
       }}
     >
       <div
         style={{
-          background: '#fff',
-          borderRadius: 22,
-          boxShadow: '0 10px 30px rgba(30,70,66,.08)',
-          padding: '40px 36px',
+          position: 'relative',
+          background: 'rgba(255,255,255,.62)',
+          backdropFilter: 'blur(22px)',
+          WebkitBackdropFilter: 'blur(22px)',
+          border: '1px solid rgba(255,255,255,.75)',
+          borderRadius: 28,
+          boxShadow: '0 30px 70px rgba(20,60,55,.16), inset 0 1px 0 rgba(255,255,255,.6)',
+          padding: '44px 38px',
           textAlign: 'center',
-          maxWidth: 360,
+          maxWidth: 380,
           width: '100%',
         }}
       >
-        <h1 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 26, color: '#227069', marginBottom: 8 }}>
-          💄 BeautyAI
+        <div
+          style={{
+            width: 52,
+            height: 52,
+            margin: '0 auto 22px',
+            borderRadius: 16,
+            background: 'linear-gradient(135deg,#2E8F87,#3AA79D)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            fontSize: 24,
+            boxShadow: '0 12px 26px rgba(46,143,135,.35)',
+          }}
+        >
+          ✦
+        </div>
+        <h1 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 24, color: '#1B4A45', marginBottom: 8 }}>
+          Painel de Atendimento
         </h1>
-        <p style={{ fontSize: 13, color: '#6E807D', marginBottom: 28 }}>
-          Entre para acessar o painel de atendimento
+        <p style={{ fontSize: 13, color: '#6E807D', marginBottom: 30, lineHeight: 1.5 }}>
+          Entre com sua conta Google para acessar o painel
         </p>
         <button
           onClick={handleGoogleLogin}
@@ -48,14 +74,15 @@ export default function LoginPage() {
             justifyContent: 'center',
             gap: 10,
             width: '100%',
-            border: '1.5px solid #DFE9E7',
+            border: 'none',
             borderRadius: 14,
-            padding: '12px 16px',
+            padding: '13px 16px',
             background: '#fff',
             cursor: 'pointer',
             fontSize: 14,
             fontWeight: 600,
             color: '#1f2937',
+            boxShadow: '0 8px 20px rgba(20,60,55,.12)',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
