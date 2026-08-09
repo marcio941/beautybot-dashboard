@@ -16,15 +16,17 @@ const NAV = [
 interface Props {
   active: string
   onNavigate: (id: string) => void
+  logoOverride?: string | null
 }
 
-export default function Sidebar({ active, onNavigate }: Props) {
+export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
   const router = useRouter()
   const supabase = createClient()
-  const { userName, accountName, loading: profileLoading } = useProfile()
+  const { userName, accountName, logoUrl, loading: profileLoading } = useProfile()
   const displayName = profileLoading ? 'Carregando...' : (userName || 'Usuário')
   const displayAccount = profileLoading ? '' : (accountName || 'Sua conta')
   const avatarInitial = userName ? userName.trim().charAt(0).toUpperCase() : '?'
+  const logoParaExibir = logoOverride !== undefined ? logoOverride : logoUrl
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -104,7 +106,15 @@ export default function Sidebar({ active, onNavigate }: Props) {
         <div style={{
           width: 36, height: 36, borderRadius: '50%', background: '#fff', color: '#227069',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14,
-        }}>{avatarInitial}</div>
+          overflow: 'hidden', flexShrink: 0,
+        }}>
+          {logoParaExibir ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoParaExibir} alt={displayAccount} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            avatarInitial
+          )}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <b style={{ fontSize: 13, display: 'block' }}>{displayName}</b>
           <span style={{ fontSize: 11, opacity: 0.8 }}>{displayAccount}</span>

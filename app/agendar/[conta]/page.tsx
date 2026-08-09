@@ -11,6 +11,7 @@ type Conta = {
   rotulo_servico: string
   rotulo_segmento: string | null
   rotulo_profissional: string
+  logo_url: string | null
 }
 type Servico = { id: string; nome: string; slug: string; duracao_min: number; preco: number | null }
 type Slot = { inicio: string; fim: string }
@@ -191,6 +192,10 @@ export default function AgendarPage() {
         .caixa { max-width: 560px; margin: 0 auto; }
 
         .topo { margin-bottom: 28px; }
+        .logo {
+          width: 56px; height: 56px; border-radius: 14px; object-fit: cover;
+          margin-bottom: 10px; border: 1px solid var(--linha); background: #fff;
+        }
         .eyebrow {
           font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
           color: var(--ink-mute); margin: 0 0 6px;
@@ -308,6 +313,10 @@ export default function AgendarPage() {
         ) : (
           <>
             <header className="topo">
+              {conta?.logo_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="logo" src={conta.logo_url} alt={conta.nome} />
+              )}
               {conta?.rotulo_segmento && <p className="eyebrow">{conta.rotulo_segmento}</p>}
               <h1 className="titulo">{conta?.nome ?? 'Agendar'}</h1>
             </header>
