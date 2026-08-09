@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 const EVOLUTION_URL = process.env.EVOLUTION_API_URL || "";
 const EVOLUTION_KEY = process.env.EVOLUTION_API_KEY || "";
@@ -35,5 +36,85 @@ export async function GET() {
   } catch (err: any) {
     console.error("Conversations error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json().catch(() => null);
+    const leadId = body?.leadId;
+    const texto = typeof body?.texto === "string" ? body.texto.trim() : "";
+
+    if (!leadId || !texto) {
+      return NextResponse.json({ error: "Informe o lead e o texto da mensagem." }, { status: 400 });
+    }
+
+    const supabase = createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    }
+
+    const { data: perfil, error: perfilError } = await supabase
+      .from("perfis")
+      .select("conta_id")
+      .eq("id", user.id)
+      .single();
+
+    if (perfilError || !perfil?.conta_id) {
+      return NextResponse.json({ error: "Conta do usuário não encontrada." }, { status: 404 });
+    }
+
+    const { data: conta, error: contaError } = await supabase
+      .from("contas")
+      .select("whatsapp_instance")
+      .eq("id", perfil.conta_id)
+      .single();
+
+    if (contaError || !conta?.whatsapp_instance) {
+      return NextResponse.json({ error: "Instância do WhatsApp não configurada para essa conta." }, { status: 400 });
+    }
+
+    const { data: lead, error: leadError } = await supabase
+      .from("leads")
+      .select("id, phone")
+      .eq("id", leadId)
+      .eq("conta_id", perfil.conta_id)
+      .single();
+
+    if (leadError || !lead?.phone) {
+      return NextResponse.json({ error: "Lead não encontrado ou sem telefone cadastrado." }, { status: 404 });
+    }
+
+    const sendRes = await fetch(`${EVOLUTION_URL}/message/sendText/${conta.whatsapp_instance}`, {
+      method: "POST",
+      headers: {
+        "apikey": EVOLUTION_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ number: lead.phone, text: texto }),
+      cache: "no-store",
+    });
+
+    if (!sendRes.ok) {
+      throw new Error(`Falha ao enviar mensagem via WhatsApp (status ${sendRes.status}).`);
+    }
+
+    const { data: mensagem, error: insertError } = await supabase
+      .from("mensagens")
+      .insert({ conta_id: perfil.conta_id, lead_id: leadId, remetente: "humano", texto })
+      .select("id, remetente, texto, created_at")
+      .single();
+
+    if (insertError) {
+      console.error("Erro ao registrar mensagem enviada:", insertError);
+      return NextResponse.json({ error: "Mensagem enviada, mas houve falha ao registrar no histórico." }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, mensagem });
+  } catch (err: any) {
+    console.error("Send message error:", err);
+    return NextResponse.json({ error: err.message || "Erro ao enviar mensagem." }, { status: 500 });
   }
 }

@@ -19,6 +19,14 @@ interface Lead {
   score_motivo: string | null
   dores: unknown[] | null
   gancho: string | null
+  atendimento_humano: boolean | null
+}
+
+interface MensagemRow {
+  id: string
+  remetente: 'cliente' | 'bot' | 'humano'
+  texto: string
+  created_at: string
 }
 
 interface Appointment {
@@ -97,6 +105,12 @@ export default function Dashboard() {
   const [loading, setLoading]         = useState(true)
   const [fichaLeadId, setFichaLeadId] = useState<string | null>(null)
   const [atualizandoLeadId, setAtualizandoLeadId] = useState<string | null>(null)
+  const [togglingIAId, setTogglingIAId] = useState<string | null>(null)
+  const [mensagensSelLead, setMensagensSelLead] = useState<MensagemRow[]>([])
+  const [mensagensCarregando, setMensagensCarregando] = useState(false)
+  const [mensagemTexto, setMensagemTexto] = useState('')
+  const [enviandoMensagem, setEnviandoMensagem] = useState(false)
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null)
 
   /* ── KPIs derivados ── */
   const today = new Date().toISOString().split('T')[0]
@@ -146,6 +160,68 @@ export default function Dashboard() {
   }, [])
 
   const selLead = leads[selIdx]
+
+  useEffect(() => {
+    if (!selLead) { setMensagensSelLead([]); return }
+    let ativo = true
+    async function carregarMensagens() {
+      setMensagensCarregando(true)
+      try {
+        const { data, error } = await supabase
+          .from('mensagens')
+          .select('id, remetente, texto, created_at')
+          .eq('lead_id', selLead!.id)
+          .order('created_at', { ascending: true })
+        if (error) throw error
+        if (ativo) setMensagensSelLead((data ?? []) as MensagemRow[])
+      } catch (err) {
+        console.error('Erro ao buscar mensagens do lead:', err)
+        if (ativo) setMensagensSelLead([])
+      } finally {
+        if (ativo) setMensagensCarregando(false)
+      }
+    }
+    carregarMensagens()
+    return () => { ativo = false }
+  }, [selLead?.id])
+
+  async function toggleAtendimentoHumano(lead: Lead) {
+    const valorAnterior = lead.atendimento_humano
+    const novoValor = !valorAnterior
+    setTogglingIAId(lead.id)
+    setLeads(prev => prev.map(l => (l.id === lead.id ? { ...l, atendimento_humano: novoValor } : l)))
+    try {
+      const { error } = await supabase.from('leads').update({ atendimento_humano: novoValor }).eq('id', lead.id)
+      if (error) throw error
+    } catch (err) {
+      console.error('Erro ao atualizar atendimento humano:', err)
+      setLeads(prev => prev.map(l => (l.id === lead.id ? { ...l, atendimento_humano: valorAnterior } : l)))
+    } finally {
+      setTogglingIAId(null)
+    }
+  }
+
+  async function enviarMensagem() {
+    if (!selLead || !mensagemTexto.trim() || enviandoMensagem) return
+    setEnviandoMensagem(true)
+    setErroEnvio(null)
+    try {
+      const res = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: selLead.id, texto: mensagemTexto.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Não foi possível enviar a mensagem.')
+      setMensagensSelLead(prev => [...prev, data.mensagem])
+      setMensagemTexto('')
+    } catch (err: any) {
+      console.error('Erro ao enviar mensagem:', err)
+      setErroEnvio(err.message || 'Erro ao enviar mensagem.')
+    } finally {
+      setEnviandoMensagem(false)
+    }
+  }
 
   async function mudarStatusLead(id: string, novoStatus: string) {
     const anterior = leads.find(l => l.id === id)?.status ?? null
@@ -318,20 +394,61 @@ export default function Dashboard() {
                     🗓 {statusLabel[a.status] ?? a.status} — {new Date(a.appointment_date).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })} {a.notes ? `· ${a.notes}` : ''}
                   </div>
                 ))}
-                {!selLead.notes && appointments.filter(a=>a.lead_id===selLead.id).length===0 && (
+                {!selLead.notes && appointments.filter(a=>a.lead_id===selLead.id).length===0 && !mensagensCarregando && mensagensSelLead.length===0 && (
                   <p style={{ color:'#9BB0AD', fontSize:13, textAlign:'center', marginTop:40 }}>Nenhuma nota ou agendamento para este lead.</p>
+                )}
+                {mensagensCarregando ? (
+                  <p style={{ color:'#6E807D', fontSize:12.5, textAlign:'center' }}>Carregando conversa…</p>
+                ) : (
+                  mensagensSelLead.map((m) => (
+                    <div key={m.id} style={{ alignSelf: m.remetente === 'cliente' ? 'flex-start' : 'flex-end', maxWidth:'72%', display:'flex', flexDirection:'column', gap:2 }}>
+                      {m.remetente !== 'cliente' && (
+                        <span style={{ fontSize:10, fontWeight:600, color:'#9BB0AD', textAlign:'right', paddingRight:4 }}>{m.remetente === 'bot' ? 'IA' : 'Você'}</span>
+                      )}
+                      <div style={{
+                        background: m.remetente === 'cliente' ? '#fff' : m.remetente === 'bot' ? '#227069' : '#2E8F87',
+                        color: m.remetente === 'cliente' ? '#213432' : '#fff',
+                        borderRadius: m.remetente === 'cliente' ? '16px 16px 16px 5px' : '16px 16px 5px 16px',
+                        padding:'11px 15px', fontSize:13.5, lineHeight:1.45, boxShadow:'0 3px 8px rgba(30,70,66,.06)',
+                      }}>
+                        {m.texto}
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
               <div style={{ display:'flex', gap:10, alignItems:'center', padding:'14px 18px', borderTop:'1px solid #DFE9E7', background:'#fff' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, fontWeight:600, color:'#6E807D' }}>
-                  <div style={{ width:38, height:22, background:'#9B6CF0', borderRadius:20, position:'relative', cursor:'pointer' }}>
-                    <span style={{ position:'absolute', top:3, right:3, width:16, height:16, background:'#fff', borderRadius:'50%', display:'block' }}/>
+                <button
+                  onClick={() => toggleAtendimentoHumano(selLead)}
+                  disabled={togglingIAId === selLead.id}
+                  title={selLead.atendimento_humano ? 'Atendimento humano — clique para devolver à IA' : 'IA respondendo automaticamente — clique para assumir'}
+                  style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, fontWeight:600, color:'#6E807D', border:'none', background:'none', padding:0, fontFamily:'inherit', cursor: togglingIAId === selLead.id ? 'wait' : 'pointer' }}
+                >
+                  <div style={{ width:38, height:22, background: selLead.atendimento_humano ? '#DFE9E7' : '#9B6CF0', borderRadius:20, position:'relative', transition:'background .15s' }}>
+                    <span style={{ position:'absolute', top:3, left: selLead.atendimento_humano ? 3 : 19, width:16, height:16, background:'#fff', borderRadius:'50%', display:'block', transition:'left .15s' }}/>
                   </div>
                   IA
-                </div>
-                <input type="text" placeholder="Escreva sua mensagem…" style={{ flex:1, border:'1.5px solid #DFE9E7', borderRadius:14, padding:'12px 16px', fontFamily:'inherit', fontSize:13.5, outline:'none', background:'#F2F7F6' }} />
-                <button style={{ border:'none', cursor:'pointer', width:44, height:44, borderRadius:14, background:'#2E8F87', color:'#fff', fontSize:17, boxShadow:'0 6px 14px rgba(46,143,135,.35)' }}>➤</button>
+                </button>
+                <input
+                  type="text"
+                  placeholder="Escreva sua mensagem…"
+                  value={mensagemTexto}
+                  onChange={(e) => setMensagemTexto(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensagem() } }}
+                  disabled={enviandoMensagem}
+                  style={{ flex:1, border:'1.5px solid #DFE9E7', borderRadius:14, padding:'12px 16px', fontFamily:'inherit', fontSize:13.5, outline:'none', background:'#F2F7F6' }}
+                />
+                <button
+                  onClick={enviarMensagem}
+                  disabled={enviandoMensagem || !mensagemTexto.trim()}
+                  style={{ border:'none', width:44, height:44, borderRadius:14, background: enviandoMensagem || !mensagemTexto.trim() ? '#9BB0AD' : '#2E8F87', color:'#fff', fontSize:17, boxShadow:'0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer' }}
+                >
+                  {enviandoMensagem ? '…' : '➤'}
+                </button>
               </div>
+              {erroEnvio && (
+                <p style={{ background:'#FDECEF', color:'#8C2340', fontSize:12, padding:'8px 18px', margin:0 }}>{erroEnvio}</p>
+              )}
             </>
           ) : (
             <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#9BB0AD', fontSize:14 }}>
