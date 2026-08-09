@@ -7,6 +7,7 @@ import Conversations from '@/components/Conversations'
 import Services from '@/components/Services'
 import Settings from '@/components/Settings'
 import KanbanLeads from '@/components/KanbanLeads'
+import FollowUps from '@/components/FollowUps'
 
 const VIEWS: Record<string, React.ReactNode> = {}
 
@@ -21,6 +22,7 @@ export default function Home() {
       case 'conversations':return <Conversations />
       case 'kanban':       return <KanbanLeads />
       case 'services':     return <Services />
+      case 'followups':    return <FollowUps />
       case 'settings':     return <Settings onLogoChange={setLogoOverride} />
       default:             return <Dashboard />
     }
