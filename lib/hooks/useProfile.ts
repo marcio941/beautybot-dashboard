@@ -6,6 +6,7 @@ interface ProfileState {
   accountName: string | null
   contaId: string | null
   logoUrl: string | null
+  categoriasKanban: string[] | null
   loading: boolean
   error: boolean
 }
@@ -16,6 +17,7 @@ export function useProfile(): ProfileState {
     accountName: null,
     contaId: null,
     logoUrl: null,
+    categoriasKanban: null,
     loading: true,
     error: false,
   })
@@ -25,7 +27,7 @@ export function useProfile(): ProfileState {
       try {
         const [{ data: perfil, error: perfilError }, { data: conta, error: contaError }] = await Promise.all([
           supabase.from('perfis').select('nome').single(),
-          supabase.from('contas').select('id, nome, logo_url').single(),
+          supabase.from('contas').select('id, nome, logo_url, categorias_kanban').single(),
         ])
 
         if (perfilError) console.error('Erro ao buscar perfil:', perfilError.message)
@@ -36,12 +38,13 @@ export function useProfile(): ProfileState {
           accountName: conta?.nome ?? null,
           contaId: conta?.id ?? null,
           logoUrl: conta?.logo_url ?? null,
+          categoriasKanban: conta?.categorias_kanban ?? null,
           loading: false,
           error: Boolean(perfilError || contaError),
         })
       } catch (err) {
         console.error('Erro inesperado ao buscar perfil/conta:', err)
-        setState({ userName: null, accountName: null, contaId: null, logoUrl: null, loading: false, error: true })
+        setState({ userName: null, accountName: null, contaId: null, logoUrl: null, categoriasKanban: null, loading: false, error: true })
       }
     }
     load()
