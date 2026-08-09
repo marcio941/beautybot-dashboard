@@ -4,7 +4,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-type Conta = { id: string; nome: string; segmento: string | null }
+type Conta = {
+  id: string
+  nome: string
+  segmento: string | null
+  rotulo_servico: string
+  rotulo_segmento: string | null
+  rotulo_profissional: string
+}
 type Servico = { id: string; nome: string; duracao_min: number; preco: number | null }
 type Slot = { inicio: string; fim: string }
 type Status = 'carregando' | 'nao_encontrada' | 'carregada'
@@ -303,14 +310,14 @@ export default function AgendarPage() {
         ) : (
           <>
             <header className="topo">
-              <p className="eyebrow">{conta?.segmento ?? 'Agendamento'}</p>
+              {conta?.rotulo_segmento && <p className="eyebrow">{conta.rotulo_segmento}</p>}
               <h1 className="titulo">{conta?.nome ?? 'Agendar'}</h1>
             </header>
 
             {erro && <p className="aviso">{erro}</p>}
 
             <section className="secao">
-              <p className="rotulo">Serviço</p>
+              <p className="rotulo">{conta?.rotulo_servico || 'Serviço'}</p>
               <div className="servicos">
                 {servicos.map((s) => (
                   <button
