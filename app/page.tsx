@@ -14,6 +14,7 @@ const VIEWS: Record<string, React.ReactNode> = {}
 export default function Home() {
   const [view, setView] = useState('dashboard')
   const [logoOverride, setLogoOverride] = useState<string | null | undefined>(undefined)
+  const [nomeOverride, setNomeOverride] = useState<string | null | undefined>(undefined)
 
   const renderView = () => {
     switch (view) {
@@ -23,14 +24,14 @@ export default function Home() {
       case 'kanban':       return <KanbanLeads />
       case 'services':     return <Services />
       case 'followups':    return <FollowUps />
-      case 'settings':     return <Settings onLogoChange={setLogoOverride} />
+      case 'settings':     return <Settings onLogoChange={setLogoOverride} onNomeChange={setNomeOverride} />
       default:             return <Dashboard />
     }
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar active={view} onNavigate={setView} logoOverride={logoOverride} />
+      <Sidebar active={view} onNavigate={setView} logoOverride={logoOverride} nomeOverride={nomeOverride} />
       <main style={{ flex: 1, padding: '28px 30px', minWidth: 0 }}>
         {renderView()}
       </main>

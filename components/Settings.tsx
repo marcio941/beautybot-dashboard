@@ -6,6 +6,7 @@ import { useProfile } from '@/lib/hooks/useProfile'
 
 interface Props {
   onLogoChange?: (url: string | null) => void
+  onNomeChange?: (nome: string | null) => void
 }
 
 interface DiaHorario {
@@ -61,7 +62,7 @@ const caixaErro: React.CSSProperties = {
   background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13, marginTop: 12,
 }
 
-export default function Settings({ onLogoChange }: Props) {
+export default function Settings({ onLogoChange, onNomeChange }: Props) {
   const { contaId, logoUrl, loading: perfilCarregando } = useProfile()
 
   // Logo (existente, não alterado)
@@ -120,6 +121,10 @@ export default function Settings({ onLogoChange }: Props) {
   const [configCarregando, setConfigCarregando] = useState(true)
   const [configErro, setConfigErro] = useState<string | null>(null)
 
+  const [nomeConta, setNomeConta] = useState('')
+  const [nomeSalvando, setNomeSalvando] = useState(false)
+  const [nomeErro, setNomeErro] = useState<string | null>(null)
+
   const [rotuloServico, setRotuloServico] = useState('')
   const [rotuloSegmento, setRotuloSegmento] = useState('')
   const [rotuloProfissional, setRotuloProfissional] = useState('')
@@ -147,12 +152,13 @@ export default function Settings({ onLogoChange }: Props) {
       try {
         const { data, error } = await supabase
           .from('contas')
-          .select('rotulo_servico, rotulo_segmento, rotulo_profissional, horarios_funcionamento, slot_granularidade_min, antecedencia_minima_horas, antecedencia_maxima_dias')
+          .select('nome, rotulo_servico, rotulo_segmento, rotulo_profissional, horarios_funcionamento, slot_granularidade_min, antecedencia_minima_horas, antecedencia_maxima_dias')
           .eq('id', contaId)
           .single()
         if (error) throw error
         if (!ativo) return
 
+        setNomeConta(data?.nome ?? '')
         setRotuloServico(data?.rotulo_servico ?? '')
         setRotuloSegmento(data?.rotulo_segmento ?? '')
         setRotuloProfissional(data?.rotulo_profissional ?? '')
@@ -170,6 +176,26 @@ export default function Settings({ onLogoChange }: Props) {
     carregar()
     return () => { ativo = false }
   }, [contaId, perfilCarregando])
+
+  async function salvarNomeConta() {
+    if (!contaId) return
+    const nome = nomeConta.trim()
+    if (!nome) { setNomeErro('Informe o nome da conta.'); return }
+
+    setNomeErro(null)
+    setNomeSalvando(true)
+    try {
+      const { error } = await supabase.from('contas').update({ nome }).eq('id', contaId)
+      if (error) throw error
+      setNomeConta(nome)
+      onNomeChange?.(nome)
+    } catch (err) {
+      console.error('Erro ao salvar nome da conta:', err)
+      setNomeErro('Não foi possível salvar o nome da conta. Tente de novo.')
+    } finally {
+      setNomeSalvando(false)
+    }
+  }
 
   async function salvarRotulos() {
     if (!contaId) return
@@ -319,6 +345,30 @@ export default function Settings({ onLogoChange }: Props) {
       {configErro && (
         <p style={{ ...caixaErro, maxWidth: 420 }}>{configErro}</p>
       )}
+
+      <section style={secao()}>
+        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Nome da conta</h3>
+        <p style={{ color: '#6E807D', fontSize: 13, margin: '0 0 16px' }}>
+          Aparece em destaque no topo do menu lateral.
+        </p>
+
+        {configCarregando ? (
+          <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando…</p>
+        ) : (
+          <>
+            <label style={campoLabel}>
+              Nome
+              <input type="text" value={nomeConta} onChange={(e) => setNomeConta(e.target.value)} style={campoInput} />
+            </label>
+
+            {nomeErro && <p style={caixaErro}>{nomeErro}</p>}
+
+            <button onClick={salvarNomeConta} disabled={nomeSalvando || !contaId} style={botaoSalvar(nomeSalvando || !contaId)}>
+              {nomeSalvando ? 'Salvando...' : 'Salvar nome'}
+            </button>
+          </>
+        )}
+      </section>
 
       <section style={secao()}>
         <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Rótulos da conta</h3>

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { Calendar, MessageCircle, Headset, UserPlus, Users } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 import LeadDetailModal from '@/components/LeadDetailModal'
@@ -198,14 +199,16 @@ export default function Dashboard() {
       {/* ── KPIs ── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))', gap:16, marginBottom:18 }}>
         {[
-          { ic:'🗓', v: loading ? '…' : String(apptToday.length),   label:'Agendamentos hoje',  d:'+' },
-          { ic:'💬', v: loading ? '…' : String(conversas.length),   label:'Conversas ativas',   d:'↑' },
-          { ic:'🤖', v: loading ? '…' : String(emAtend),            label:'Em atendimento',     d:'↑' },
-          { ic:'🆕', v: loading ? '…' : String(leadsNovos),         label:'Leads novos',        d:'↑' },
-          { ic:'👥', v: loading ? '…' : String(totalLeads),         label:'Total de leads',     d:'↑' },
+          { Icon: Calendar,       v: loading ? '…' : String(apptToday.length),   label:'Agendamentos hoje',  d:'+' },
+          { Icon: MessageCircle,  v: loading ? '…' : String(conversas.length),   label:'Conversas ativas',   d:'↑' },
+          { Icon: Headset,        v: loading ? '…' : String(emAtend),            label:'Em atendimento',     d:'↑' },
+          { Icon: UserPlus,       v: loading ? '…' : String(leadsNovos),         label:'Leads novos',        d:'↑' },
+          { Icon: Users,          v: loading ? '…' : String(totalLeads),         label:'Total de leads',     d:'↑' },
         ].map(k=>(
           <div key={k.label} style={{ ...card(), padding:'18px 20px', position:'relative' }}>
-            <div style={{ width:38, height:38, borderRadius:12, background:'#E7F2F0', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, marginBottom:12 }}>{k.ic}</div>
+            <div style={{ width:38, height:38, borderRadius:12, background:'#E7F2F0', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>
+              <k.Icon size={18} color="#227069" />
+            </div>
             <b style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:25 }}>{k.v}</b>
             <span style={{ display:'block', fontSize:12, color:'#6E807D', marginTop:2 }}>{k.label}</span>
           </div>

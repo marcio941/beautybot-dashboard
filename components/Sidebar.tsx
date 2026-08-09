@@ -8,7 +8,7 @@ import { useProfile } from '@/lib/hooks/useProfile'
 const NAV = [
   { id: 'dashboard',     icon: '▦', label: 'Visão Geral',     badge: 0 },
   { id: 'appointments',  icon: '🗓', label: 'Agendamentos',    badge: 0 },
-  { id: 'conversations', icon: '💬', label: 'Conversas',       badge: 3 },
+  { id: 'conversations', icon: '💬', label: 'Conversas',       badge: 0 },
   { id: 'kanban',        icon: '📋', label: 'Kanban de Leads', badge: 0 },
   { id: 'services',      icon: '✨', label: 'Serviços',        badge: 0 },
   { id: 'followups',     icon: '🔁', label: 'Follow-ups',      badge: 0 },
@@ -19,16 +19,38 @@ interface Props {
   active: string
   onNavigate: (id: string) => void
   logoOverride?: string | null
+  nomeOverride?: string | null
 }
 
-export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
+export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride }: Props) {
   const router = useRouter()
   const supabase = createClient()
-  const { userName, accountName, logoUrl, loading: profileLoading } = useProfile()
+  const { userName, accountName, contaId, logoUrl, loading: profileLoading } = useProfile()
   const displayName = profileLoading ? 'Carregando...' : (userName || 'Usuário')
-  const displayAccount = profileLoading ? '' : (accountName || 'Sua conta')
+  const nomeContaAtual = nomeOverride !== undefined ? nomeOverride : accountName
+  const displayAccount = profileLoading ? 'Carregando...' : (nomeContaAtual || 'Sua conta')
   const avatarInitial = userName ? userName.trim().charAt(0).toUpperCase() : '?'
+  const avatarInicialConta = nomeContaAtual ? nomeContaAtual.trim().charAt(0).toUpperCase() : '?'
   const logoParaExibir = logoOverride !== undefined ? logoOverride : logoUrl
+
+  const [conversasCount, setConversasCount] = useState(0)
+
+  useEffect(() => {
+    if (!contaId) return
+    let ativo = true
+    async function carregarContagemConversas() {
+      try {
+        const { data, error } = await supabase.from('mensagens').select('lead_id').eq('conta_id', contaId)
+        if (error) throw error
+        if (!ativo) return
+        setConversasCount(new Set((data ?? []).map((m) => m.lead_id)).size)
+      } catch (err) {
+        console.error('Erro ao contar conversas:', err)
+      }
+    }
+    carregarContagemConversas()
+    return () => { ativo = false }
+  }, [contaId])
 
   const [qrModalOpen, setQrModalOpen] = useState(false)
   const [qrImage, setQrImage] = useState<string | null>(null)
@@ -103,16 +125,36 @@ export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
       position: 'sticky', top: 0, height: '100vh',
     }}>
 
-      {/* Brand */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px 22px' }}>
+      {/* Brand: logo/avatar + nome da conta */}
+      <button
+        onClick={() => onNavigate('dashboard')}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px 22px',
+          border: 'none', background: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
+          fontFamily: 'inherit',
+        }}
+      >
         <div style={{
-          width: 40, height: 40, border: '3px solid #fff', borderRadius: 12,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-        }}>✦</div>
-        <h1 style={{ fontFamily: "'Baloo 2', sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 0.9 }}>
-          Beauty<small style={{ display: 'block', fontSize: 9, fontWeight: 600, letterSpacing: '0.4em', opacity: 0.85 }}>BOT</small>
+          width: 40, height: 40, borderRadius: logoParaExibir ? 12 : '50%',
+          border: logoParaExibir ? '3px solid #fff' : 'none',
+          background: logoParaExibir ? 'transparent' : '#fff', color: '#227069',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 17,
+          overflow: 'hidden', flexShrink: 0,
+        }}>
+          {logoParaExibir ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoParaExibir} alt={displayAccount} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            avatarInicialConta
+          )}
+        </div>
+        <h1 style={{
+          fontFamily: "'Baloo 2', sans-serif", fontSize: 18, fontWeight: 700, color: '#fff',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {displayAccount}
         </h1>
-      </div>
+      </button>
 
       {/* WPP Status */}
       <button
@@ -138,6 +180,7 @@ export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {NAV.map(item => {
           const isActive = active === item.id
+          const badge = item.id === 'conversations' ? conversasCount : item.badge
           return (
             <button
               key={item.id}
@@ -155,11 +198,11 @@ export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
             >
               <span>{item.icon}</span>
               <span style={{ flex: 1 }}>{item.label}</span>
-              {item.badge > 0 && (
+              {badge > 0 && (
                 <span style={{
                   background: '#F6BE4F', color: '#5c4308',
                   fontSize: 11, fontWeight: 700, borderRadius: 10, padding: '1px 8px',
-                }}>{item.badge}</span>
+                }}>{badge}</span>
               )}
             </button>
           )
@@ -185,7 +228,6 @@ export default function Sidebar({ active, onNavigate, logoOverride }: Props) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <b style={{ fontSize: 13, display: 'block' }}>{displayName}</b>
-          <span style={{ fontSize: 11, opacity: 0.8 }}>{displayAccount}</span>
         </div>
         <button
           onClick={handleLogout}
