@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useProfile } from '@/lib/hooks/useProfile'
 
 type StatusAgendamento = 'scheduled' | 'completed' | 'cancelled' | 'no_show'
 type Visao = 'lista' | 'calendario'
@@ -16,15 +17,18 @@ interface AppointmentRow {
   servico_id: string | null
   lead_id: string | null
   name: string | null
+  profissional_id: string | null
 }
 
 interface ServicoInfo { id: string; nome: string }
 interface LeadInfo { id: string; name: string | null; phone: string | null }
+interface ProfissionalInfo { id: string; nome: string }
 
 interface Agendamento extends AppointmentRow {
   servicoNome: string | null
   clienteNome: string
   clienteTelefone: string | null
+  profissionalNome: string | null
 }
 
 const TZ = 'America/Sao_Paulo'
@@ -136,9 +140,10 @@ function SeletorStatus({ value, disabled, onChange }: {
   )
 }
 
-function LinhaAgendamento({ a, atualizando, onMudarStatus, onAbrirDetalhe }: {
+function LinhaAgendamento({ a, atualizando, mostrarProfissional, onMudarStatus, onAbrirDetalhe }: {
   a: Agendamento
   atualizando: boolean
+  mostrarProfissional: boolean
   onMudarStatus: (id: string, status: StatusAgendamento) => void
   onAbrirDetalhe: (id: string) => void
 }) {
@@ -152,6 +157,9 @@ function LinhaAgendamento({ a, atualizando, onMudarStatus, onAbrirDetalhe }: {
         <small style={{ fontSize: 11.5, color: 'var(--sub)' }}>{formatarTelefone(a.clienteTelefone)}</small>
       </div>
       <div style={{ flex: '1 1 140px', fontSize: 12.5, color: 'var(--ink)' }}>{a.servicoNome ?? '—'}</div>
+      {mostrarProfissional && (
+        <div style={{ flex: '1 1 130px', fontSize: 12.5, color: 'var(--ink)' }}>{a.profissionalNome ?? '—'}</div>
+      )}
       <div style={{ flex: '1 1 210px', fontSize: 12.5, color: '#227069', fontWeight: 600, textTransform: 'capitalize' }}>
         {fmtCompleto.format(new Date(a.appointment_date))}
       </div>
@@ -183,6 +191,9 @@ function ModalDetalhe({ a, atualizando, onFechar, onMudarStatus }: {
           <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--sub)' }}>✕</button>
         </div>
         <p style={{ fontSize: 13, color: 'var(--ink)', marginBottom: 6 }}><b>Serviço:</b> {a.servicoNome ?? '—'}</p>
+        {a.profissionalNome && (
+          <p style={{ fontSize: 13, color: 'var(--ink)', marginBottom: 6 }}><b>Profissional:</b> {a.profissionalNome}</p>
+        )}
         <p style={{ fontSize: 13, color: 'var(--ink)', marginBottom: 6, textTransform: 'capitalize' }}>
           <b>Quando:</b> {fmtCompleto.format(new Date(a.appointment_date))}
         </p>
@@ -197,12 +208,15 @@ function ModalDetalhe({ a, atualizando, onFechar, onMudarStatus }: {
 }
 
 export default function Appointments() {
+  const { contaId } = useProfile()
   const [montado, setMontado] = useState(false)
   const [visao, setVisao] = useState<Visao>('lista')
   const [filtro, setFiltro] = useState<FiltroStatus>('todos')
+  const [filtroProfissional, setFiltroProfissional] = useState<string>('todos')
   const [periodo, setPeriodo] = useState<Periodo>('semana')
 
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
+  const [profissionais, setProfissionais] = useState<ProfissionalInfo[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [atualizandoId, setAtualizandoId] = useState<string | null>(null)
@@ -215,27 +229,49 @@ export default function Appointments() {
     setReferencia(chaveDia(new Date().toISOString()))
   }, [])
 
+  useEffect(() => {
+    if (!contaId) return
+    let ativo = true
+    async function carregarProfissionais() {
+      const { data, error } = await supabase
+        .from('profissionais')
+        .select('id, nome')
+        .eq('conta_id', contaId)
+        .order('nome', { ascending: true })
+      if (error) { console.error('Erro ao buscar profissionais:', error.message); return }
+      if (ativo) setProfissionais((data ?? []) as ProfissionalInfo[])
+    }
+    carregarProfissionais()
+    return () => { ativo = false }
+  }, [contaId])
+
+  const usaProfissionais = profissionais.length > 0
+  const mostrarFiltroProfissional = profissionais.length > 1
+
   const carregar = useCallback(async () => {
     setCarregando(true)
     setErro(null)
     try {
       const { data, error } = await supabase
         .from('appointments')
-        .select('id, appointment_date, status, notes, servico_id, lead_id, name')
+        .select('id, appointment_date, status, notes, servico_id, lead_id, name, profissional_id')
         .order('appointment_date', { ascending: true })
       if (error) throw error
 
       const linhas = (data ?? []) as AppointmentRow[]
       const servicoIds = Array.from(new Set(linhas.map((a) => a.servico_id).filter((v): v is string => !!v)))
       const leadIds = Array.from(new Set(linhas.map((a) => a.lead_id).filter((v): v is string => !!v)))
+      const profissionalIds = Array.from(new Set(linhas.map((a) => a.profissional_id).filter((v): v is string => !!v)))
 
-      const [servicosData, leadsData] = await Promise.all([
+      const [servicosData, leadsData, profissionaisData] = await Promise.all([
         buscarPorIds<ServicoInfo>('servicos', 'id, nome', servicoIds),
         buscarPorIds<LeadInfo>('leads', 'id, name, phone', leadIds),
+        buscarPorIds<ProfissionalInfo>('profissionais', 'id, nome', profissionalIds),
       ])
 
       const servicosMap = new Map(servicosData.map((s) => [s.id, s.nome]))
       const leadsMap = new Map(leadsData.map((l) => [l.id, l]))
+      const profissionaisMap = new Map(profissionaisData.map((p) => [p.id, p.nome]))
 
       const enriquecidos: Agendamento[] = linhas.map((a) => {
         const lead = a.lead_id ? leadsMap.get(a.lead_id) : undefined
@@ -244,6 +280,7 @@ export default function Appointments() {
           servicoNome: a.servico_id ? servicosMap.get(a.servico_id) ?? null : null,
           clienteNome: lead?.name || a.name || 'Cliente',
           clienteTelefone: lead?.phone ?? null,
+          profissionalNome: a.profissional_id ? profissionaisMap.get(a.profissional_id) ?? null : null,
         }
       })
 
@@ -274,9 +311,16 @@ export default function Appointments() {
     }
   }, [])
 
+  const agendamentosVisiveis = useMemo(
+    () => (mostrarFiltroProfissional && filtroProfissional !== 'todos'
+      ? agendamentos.filter((a) => a.profissional_id === filtroProfissional)
+      : agendamentos),
+    [agendamentos, mostrarFiltroProfissional, filtroProfissional]
+  )
+
   const listaFiltrada = useMemo(
-    () => (filtro === 'todos' ? agendamentos : agendamentos.filter((a) => a.status === filtro)),
-    [agendamentos, filtro]
+    () => (filtro === 'todos' ? agendamentosVisiveis : agendamentosVisiveis.filter((a) => a.status === filtro)),
+    [agendamentosVisiveis, filtro]
   )
 
   // diasPeriodo só ganha datas reais depois do mount (referencia deixa de ser null);
@@ -291,12 +335,12 @@ export default function Appointments() {
   const porDia = useMemo(() => {
     const mapa = new Map<string, Agendamento[]>()
     for (const chave of diasPeriodo) mapa.set(chave, [])
-    for (const a of agendamentos) {
+    for (const a of agendamentosVisiveis) {
       const chave = chaveDia(a.appointment_date)
       if (mapa.has(chave)) mapa.get(chave)!.push(a)
     }
     return mapa
-  }, [agendamentos, diasPeriodo])
+  }, [agendamentosVisiveis, diasPeriodo])
 
   function irPara(delta: number) {
     setReferencia((prev) => (prev ? addDias(prev, periodo === 'dia' ? delta : delta * 7) : prev))
@@ -314,6 +358,22 @@ export default function Appointments() {
           <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>🗓 Agendamentos</h2>
           <p style={{ color: 'var(--sub)', fontSize: 13 }}>Gerencie todos os agendamentos da clínica.</p>
         </div>
+        {mostrarFiltroProfissional && (
+          <select
+            value={filtroProfissional}
+            onChange={(e) => setFiltroProfissional(e.target.value)}
+            style={{
+              fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: '#227069',
+              border: '1.5px solid var(--line)', borderRadius: 10, padding: '9px 10px',
+              background: 'var(--card-bg)', cursor: 'pointer',
+            }}
+          >
+            <option value="todos">Todos os profissionais</option>
+            {profissionais.map((p) => (
+              <option key={p.id} value={p.id}>{p.nome}</option>
+            ))}
+          </select>
+        )}
         <div style={{ ...card(), padding: 5, display: 'flex', gap: 4 }}>
           {(['lista', 'calendario'] as Visao[]).map((v) => (
             <button
@@ -368,6 +428,7 @@ export default function Appointments() {
                   key={a.id}
                   a={a}
                   atualizando={atualizandoId === a.id}
+                  mostrarProfissional={usaProfissionais}
                   onMudarStatus={mudarStatus}
                   onAbrirDetalhe={setDetalheId}
                 />
@@ -435,6 +496,9 @@ export default function Appointments() {
                           <b style={{ display: 'block', fontSize: 12 }}>{fmtHora.format(new Date(a.appointment_date))}</b>
                           <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.clienteNome}</span>
                           <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: .8 }}>{a.servicoNome ?? '—'}</span>
+                          {usaProfissionais && (
+                            <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: .8 }}>{a.profissionalNome ?? '—'}</span>
+                          )}
                         </button>
                       ))}
                     </div>

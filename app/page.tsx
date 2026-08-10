@@ -6,6 +6,7 @@ import Dashboard from '@/components/Dashboard'
 import Appointments from '@/components/Appointments'
 import Conversations from '@/components/Conversations'
 import Services from '@/components/Services'
+import Professionals from '@/components/Professionals'
 import Settings from '@/components/Settings'
 import KanbanLeads from '@/components/KanbanLeads'
 import FollowUps from '@/components/FollowUps'
@@ -41,6 +42,7 @@ export default function Home() {
       case 'conversations':return <Conversations initialLeadId={leadParaConversas} />
       case 'kanban':       return <KanbanLeads />
       case 'services':     return <Services />
+      case 'professionals':return <Professionals />
       case 'followups':    return <FollowUps />
       case 'settings':     return <Settings onLogoChange={setLogoOverride} onNomeChange={setNomeOverride} onCorChange={setCorOverride} />
       default:             return <Dashboard onVerConversaCompleta={abrirConversaCompleta} />

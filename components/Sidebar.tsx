@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { LayoutDashboard, Calendar, MessageCircle, Kanban, Sparkles, Repeat, Settings, X } from 'lucide-react'
+import { LayoutDashboard, Calendar, MessageCircle, Kanban, Sparkles, Repeat, Settings, Users, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -10,6 +10,7 @@ const NAV = [
   { id: 'conversations', icon: MessageCircle,    label: 'Conversas',       badge: 0 },
   { id: 'kanban',        icon: Kanban,           label: 'Kanban de Leads', badge: 0 },
   { id: 'services',      icon: Sparkles,         label: 'Serviços',        badge: 0 },
+  { id: 'professionals', icon: Users,            label: 'Profissionais',   badge: 0 },
   { id: 'followups',     icon: Repeat,           label: 'Follow-ups',      badge: 0 },
   { id: 'settings',      icon: Settings,         label: 'Configurações',   badge: 0 },
 ]

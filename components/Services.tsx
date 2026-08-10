@@ -9,6 +9,7 @@ interface ServicoRow {
   nome: string
   duracao_min: number
   preco: number | null
+  buffer_min: number | null
   ativo: boolean
   slug: string | null
 }
@@ -36,6 +37,7 @@ export default function Services() {
   const [formNome, setFormNome] = useState('')
   const [formDuracao, setFormDuracao] = useState('')
   const [formPreco, setFormPreco] = useState('')
+  const [formBuffer, setFormBuffer] = useState('')
   const [formErro, setFormErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
@@ -51,7 +53,7 @@ export default function Services() {
     try {
       const { data, error } = await supabase
         .from('servicos')
-        .select('id, nome, duracao_min, preco, ativo, slug')
+        .select('id, nome, duracao_min, preco, buffer_min, ativo, slug')
         .eq('conta_id', contaId)
         .order('ativo', { ascending: false })
         .order('nome', { ascending: true })
@@ -71,6 +73,7 @@ export default function Services() {
     setFormNome('')
     setFormDuracao('')
     setFormPreco('')
+    setFormBuffer('')
     setFormErro(null)
     setModalAberto(true)
   }
@@ -80,6 +83,7 @@ export default function Services() {
     setFormNome(s.nome)
     setFormDuracao(String(s.duracao_min))
     setFormPreco(s.preco != null ? String(s.preco) : '')
+    setFormBuffer(s.buffer_min != null ? String(s.buffer_min) : '')
     setFormErro(null)
     setModalAberto(true)
   }
@@ -93,10 +97,12 @@ export default function Services() {
     const nome = formNome.trim()
     const duracao = parseInt(formDuracao, 10)
     const preco = parseFloat(formPreco.replace(',', '.'))
+    const buffer = formBuffer.trim() === '' ? 0 : parseInt(formBuffer, 10)
 
     if (!nome) { setFormErro('Informe o nome do serviço.'); return }
     if (!Number.isFinite(duracao) || duracao <= 0) { setFormErro('A duração precisa ser um número positivo de minutos.'); return }
     if (!Number.isFinite(preco) || preco <= 0) { setFormErro('O preço precisa ser um valor positivo.'); return }
+    if (!Number.isFinite(buffer) || buffer < 0) { setFormErro('O buffer precisa ser um número de minutos maior ou igual a zero.'); return }
 
     setFormErro(null)
     setSalvando(true)
@@ -104,15 +110,15 @@ export default function Services() {
       if (editando) {
         const { error } = await supabase
           .from('servicos')
-          .update({ nome, duracao_min: duracao, preco })
+          .update({ nome, duracao_min: duracao, preco, buffer_min: buffer })
           .eq('id', editando.id)
         if (error) throw error
-        setServicos(prev => prev.map(s => (s.id === editando.id ? { ...s, nome, duracao_min: duracao, preco } : s)))
+        setServicos(prev => prev.map(s => (s.id === editando.id ? { ...s, nome, duracao_min: duracao, preco, buffer_min: buffer } : s)))
       } else {
         const { data, error } = await supabase
           .from('servicos')
-          .insert({ conta_id: contaId, nome, duracao_min: duracao, preco, ativo: true })
-          .select('id, nome, duracao_min, preco, ativo, slug')
+          .insert({ conta_id: contaId, nome, duracao_min: duracao, preco, buffer_min: buffer, ativo: true })
+          .select('id, nome, duracao_min, preco, buffer_min, ativo, slug')
           .single()
         if (error) throw error
         setServicos(prev => [...prev, data as ServicoRow].sort((a, b) => a.nome.localeCompare(b.nome)))
@@ -193,7 +199,10 @@ export default function Services() {
                     {s.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
-                <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>{s.duracao_min} min · {fmtPreco(s.preco)}</span>
+                <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>
+                  {s.duracao_min} min · {fmtPreco(s.preco)}
+                  {s.buffer_min ? ` · +${s.buffer_min}min de intervalo` : ''}
+                </span>
               </div>
               <button
                 onClick={() => abrirEditar(s)}
@@ -251,36 +260,53 @@ export default function Services() {
                   }}
                 />
               </label>
-              <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>
-                Duração (minutos)
-                <input
-                  type="number"
-                  min={1}
-                  value={formDuracao}
-                  onChange={(e) => setFormDuracao(e.target.value)}
-                  placeholder="Ex: 60"
-                  style={{
-                    display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
-                    borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
-                    background: 'var(--card-bg)', color: 'var(--ink)',
-                  }}
-                />
-              </label>
-              <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>
-                Preço (R$)
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={formPreco}
-                  onChange={(e) => setFormPreco(e.target.value)}
-                  placeholder="Ex: 120,00"
-                  style={{
-                    display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
-                    borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
-                    background: 'var(--card-bg)', color: 'var(--ink)',
-                  }}
-                />
-              </label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', flex: 1 }}>
+                  Duração (min)
+                  <input
+                    type="number"
+                    min={1}
+                    value={formDuracao}
+                    onChange={(e) => setFormDuracao(e.target.value)}
+                    placeholder="Ex: 60"
+                    style={{
+                      display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
+                      borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
+                      background: 'var(--card-bg)', color: 'var(--ink)',
+                    }}
+                  />
+                </label>
+                <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', flex: 1 }}>
+                  Preço (R$)
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formPreco}
+                    onChange={(e) => setFormPreco(e.target.value)}
+                    placeholder="Ex: 120,00"
+                    style={{
+                      display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
+                      borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
+                      background: 'var(--card-bg)', color: 'var(--ink)',
+                    }}
+                  />
+                </label>
+                <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', flex: 1 }}>
+                  Buffer (min)
+                  <input
+                    type="number"
+                    min={0}
+                    value={formBuffer}
+                    onChange={(e) => setFormBuffer(e.target.value)}
+                    placeholder="Ex: 10"
+                    style={{
+                      display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
+                      borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
+                      background: 'var(--card-bg)', color: 'var(--ink)',
+                    }}
+                  />
+                </label>
+              </div>
             </div>
 
             {formErro && (

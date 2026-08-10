@@ -14,6 +14,7 @@ type Conta = {
   logo_url: string | null
 }
 type Servico = { id: string; nome: string; slug: string; duracao_min: number; preco: number | null }
+type Profissional = { id: string; nome: string; avatar_url: string | null }
 type Slot = { inicio: string; fim: string }
 type Status = 'carregando' | 'nao_encontrada' | 'carregada'
 
@@ -47,6 +48,9 @@ export default function AgendarPage() {
   const [conta, setConta] = useState<Conta | null>(null)
   const [servicos, setServicos] = useState<Servico[]>([])
   const [servicoId, setServicoId] = useState<string | null>(null)
+  const [profissionais, setProfissionais] = useState<Profissional[]>([])
+  // null = ainda não escolhido; 'qualquer' = sem preferência; string = id do profissional
+  const [profissionalId, setProfissionalId] = useState<string | 'qualquer' | null>(null)
   const [slots, setSlots] = useState<Slot[]>([])
   const [dias, setDias] = useState<[string, Slot[]][]>([])
   const [diaAtivo, setDiaAtivo] = useState<string | null>(null)
@@ -82,9 +86,17 @@ export default function AgendarPage() {
         }
         const { data: servs, error: e2 } = await supabase.rpc('servicos_publicos', { p_conta_id: c.id })
         if (e2) throw e2
+        const { data: profs, error: e3 } = await supabase
+          .from('profissionais')
+          .select('id, nome, avatar_url')
+          .eq('conta_id', c.id)
+          .eq('ativo', true)
+          .order('nome', { ascending: true })
+        if (e3) throw e3
         if (!vivo) return
         setConta(c)
         setServicos(servs ?? [])
+        setProfissionais((profs ?? []) as Profissional[])
         const pre = (servs ?? []).find((s: Servico) => s.slug === servicoNaUrl)
         if (pre) setServicoId(pre.id)
         setStatus('carregada')
@@ -97,13 +109,13 @@ export default function AgendarPage() {
     return () => { vivo = false }
   }, [params.conta, servicoNaUrl])
 
-  const carregarSlots = useCallback(async (contaId: string, servId: string) => {
+  const carregarSlots = useCallback(async (contaId: string, servId: string, profId: string | null) => {
     setBuscandoSlots(true)
     setErro(null)
     setEscolhido(null)
     try {
       const { data, error } = await supabase.rpc('horarios_disponiveis', {
-        p_conta_id: contaId, p_servico_id: servId, p_dias: 21,
+        p_conta_id: contaId, p_servico_id: servId, p_dias: 21, p_profissional_id: profId,
       })
       if (error) throw error
       setSlots(data ?? [])
@@ -115,9 +127,20 @@ export default function AgendarPage() {
     }
   }, [])
 
+  // Se a conta tem profissionais cadastrados, é preciso escolher um (ou "sem
+  // preferência") antes de buscar horários; contas sem profissionais seguem
+  // exatamente o fluxo de hoje.
+  const precisaEscolherProfissional = profissionais.length > 0
+  const profissionalPronto = !precisaEscolherProfissional || profissionalId !== null
+  const profissionalIdEfetivo = profissionalId === 'qualquer' ? null : profissionalId
+
   useEffect(() => {
-    if (conta && servicoId) carregarSlots(conta.id, servicoId)
-  }, [conta, servicoId, carregarSlots])
+    setProfissionalId(null)
+  }, [servicoId])
+
+  useEffect(() => {
+    if (conta && servicoId && profissionalPronto) carregarSlots(conta.id, servicoId, profissionalIdEfetivo)
+  }, [conta, servicoId, profissionalPronto, profissionalIdEfetivo, carregarSlots])
 
   // Agrupar os slots por dia envolve Intl/timeZone — só pode acontecer depois
   // de montado, então fica inteiramente dentro de um efeito, nunca no corpo
@@ -135,6 +158,11 @@ export default function AgendarPage() {
   }, [slots])
 
   const servico = servicos.find((s) => s.id === servicoId) ?? null
+  const profissionalNomeEscolhido = !precisaEscolherProfissional
+    ? null
+    : profissionalId === 'qualquer'
+      ? 'Sem preferência'
+      : profissionais.find((p) => p.id === profissionalId)?.nome ?? null
   const horariosDoDia = dias.find(([k]) => k === diaAtivo)?.[1] ?? []
   const podeEnviar = !!escolhido && nome.trim().length > 1 && telefone.replace(/\D/g, '').length >= 10
 
@@ -150,13 +178,14 @@ export default function AgendarPage() {
         p_nome: nome,
         p_telefone: telefone,
         p_observacao: observacao || null,
+        p_profissional_id: profissionalIdEfetivo,
       })
       if (error) throw error
       if (data?.ok) {
         setConfirmado({ data_legivel: data.data_legivel })
       } else if (data?.erro === 'horario_indisponivel') {
         setErro('Esse horário acabou de ser ocupado. Escolha outro abaixo.')
-        await carregarSlots(conta.id, servicoId)
+        await carregarSlots(conta.id, servicoId, profissionalIdEfetivo)
       } else if (data?.erro === 'dados_invalidos') {
         setErro('Confira o nome e o telefone com DDD.')
       } else {
@@ -226,6 +255,23 @@ export default function AgendarPage() {
         }
         .servico-nome { font-weight: 600; }
         .servico-meta { font-size: 13px; color: var(--ink-mute); white-space: nowrap; }
+
+        .profissionais { display: flex; flex-wrap: wrap; gap: 10px; }
+        .profissional {
+          display: flex; align-items: center; gap: 8px; cursor: pointer;
+          background: #fff; border: 1.5px solid var(--linha); border-radius: 999px;
+          padding: 8px 16px 8px 8px; font: inherit; color: inherit;
+          transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .profissional:hover { border-color: var(--teal); }
+        .profissional[aria-pressed="true"] {
+          border-color: var(--teal); background: var(--teal-soft); box-shadow: inset 3px 0 0 var(--teal);
+        }
+        .profissional-avatar {
+          width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--teal-soft);
+          display: flex; align-items: center; justify-content: center; font-weight: 700;
+          color: var(--teal); font-size: 13px; flex-shrink: 0;
+        }
 
         .rail {
           display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;
@@ -344,7 +390,41 @@ export default function AgendarPage() {
               </div>
             </section>
 
-            {servicoId && (
+            {servicoId && precisaEscolherProfissional && (
+              <section className="secao">
+                <p className="rotulo">{conta?.rotulo_profissional || 'Profissional'}</p>
+                <div className="profissionais">
+                  <button
+                    type="button"
+                    className="profissional"
+                    aria-pressed={profissionalId === 'qualquer'}
+                    onClick={() => setProfissionalId('qualquer')}
+                  >
+                    <span className="profissional-avatar">✓</span>
+                    Sem preferência
+                  </button>
+                  {profissionais.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="profissional"
+                      aria-pressed={profissionalId === p.id}
+                      onClick={() => setProfissionalId(p.id)}
+                    >
+                      {p.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="profissional-avatar" src={p.avatar_url} alt={p.nome} />
+                      ) : (
+                        <span className="profissional-avatar">{p.nome.charAt(0).toUpperCase()}</span>
+                      )}
+                      {p.nome}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {servicoId && profissionalPronto && (
               <section className="secao">
                 <p className="rotulo">Dia</p>
                 {buscandoSlots ? (
@@ -399,6 +479,12 @@ export default function AgendarPage() {
               <section className="secao">
                 <div className="resumo">
                   <strong>{servico?.nome}</strong> · {fmtCompleto.format(new Date(escolhido.inicio))}
+                  {profissionalNomeEscolhido && (
+                    <>
+                      <br />
+                      {conta?.rotulo_profissional || 'Profissional'}: {profissionalNomeEscolhido}
+                    </>
+                  )}
                 </div>
 
                 <p className="rotulo">Seus dados</p>
