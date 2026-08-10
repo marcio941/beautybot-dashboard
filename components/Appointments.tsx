@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Calendar, Clock, AlertTriangle, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -249,7 +250,7 @@ function ModalDetalhe({ a, atualizando, onFechar, onMudarStatus }: {
             <b style={{ fontSize: 16, display: 'block' }}>{a.clienteNome}</b>
             <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>{formatarTelefone(a.clienteTelefone)}</span>
           </div>
-          <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--sub)' }}>✕</button>
+          <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', color: 'var(--sub)' }}><X size={18} /></button>
         </div>
         <p style={{ fontSize: 13, color: 'var(--ink)', marginBottom: 6 }}><b>Serviço:</b> {a.servicoNome ?? '—'}</p>
         {a.profissionalNome && (
@@ -585,7 +586,9 @@ export default function Appointments({ onAbrirConversa }: { onAbrirConversa?: (l
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>🗓 Agendamentos</h2>
+          <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Calendar size={26} /> Agendamentos
+          </h2>
           <p style={{ color: 'var(--sub)', fontSize: 13 }}>Gerencie todos os agendamentos da clínica.</p>
         </div>
         {mostrarFiltroProfissional && (
@@ -628,8 +631,8 @@ export default function Appointments({ onAbrirConversa }: { onAbrirConversa?: (l
         <div style={{ background: '#FCF3DF', border: '1px solid #F0D889', borderRadius: 14, padding: '14px 18px', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <b style={{ fontSize: 13.5, color: '#8A6416' }}>
-                ⚠️ {avisoCancelamento.esperando.length} {avisoCancelamento.esperando.length === 1 ? 'pessoa está esperando' : 'pessoas estão esperando'} por esse horário
+              <b style={{ fontSize: 13.5, color: '#8A6416', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <AlertTriangle size={15} /> {avisoCancelamento.esperando.length} {avisoCancelamento.esperando.length === 1 ? 'pessoa está esperando' : 'pessoas estão esperando'} por esse horário
               </b>
               <p style={{ fontSize: 12.5, color: '#8A6416', margin: '4px 0 0' }}>
                 {avisoCancelamento.agendamento.servicoNome ?? 'Serviço'} — {fmtCompleto.format(new Date(avisoCancelamento.agendamento.appointment_date))}
@@ -637,9 +640,9 @@ export default function Appointments({ onAbrirConversa }: { onAbrirConversa?: (l
             </div>
             <button
               onClick={() => setAvisoCancelamento(null)}
-              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, color: '#8A6416' }}
+              style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', color: '#8A6416' }}
             >
-              ✕
+              <X size={16} />
             </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
@@ -779,7 +782,9 @@ export default function Appointments({ onAbrirConversa }: { onAbrirConversa?: (l
       )}
 
       <section style={{ ...card(), padding: '20px 22px', marginTop: 22 }}>
-        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 20, color: '#227069', margin: '0 0 4px' }}>🕒 Lista de Espera</h3>
+        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 20, color: '#227069', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Clock size={18} /> Lista de Espera
+        </h3>
         <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 18px' }}>
           Clientes aguardando um horário para um serviço específico.
         </p>

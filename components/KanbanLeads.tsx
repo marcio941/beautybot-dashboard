@@ -11,6 +11,7 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
+import { LayoutGrid, Target, MessageCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 import LeadDetailModal, { LeadRow } from '@/components/LeadDetailModal'
@@ -32,11 +33,13 @@ function BadgeOrigem({ origem }: { origem: string | null }) {
   const outbound = origem === 'outbound'
   return (
     <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
       background: outbound ? '#EDE4FC' : 'var(--mist)',
       color: outbound ? '#6A3BC0' : 'var(--accent)',
       fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '3px 10px', whiteSpace: 'nowrap',
     }}>
-      {outbound ? '🎯 Prospecção' : '💬 WhatsApp'}
+      {outbound ? <Target size={11} /> : <MessageCircle size={11} />}
+      {outbound ? 'Prospecção' : 'WhatsApp'}
     </span>
   )
 }
@@ -185,7 +188,10 @@ export default function KanbanLeads() {
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>📋 Kanban de Leads</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>
+            <LayoutGrid size={26} />
+            Kanban de Leads
+          </h2>
           <p style={{ color: 'var(--sub)', fontSize: 13 }}>Arraste os cards entre as colunas para mudar o status do lead.</p>
         </div>
         <input

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Calendar, MessageCircle, Headset, UserPlus, Users } from 'lucide-react'
+import { Calendar, MessageCircle, Headset, UserPlus, Users, Sparkles, StickyNote, CalendarClock, ArrowRight, Send, TrendingUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 import LeadDetailModal from '@/components/LeadDetailModal'
@@ -390,21 +390,24 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
                     {new Date(selLead.created_at).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
-                <button onClick={() => setFichaLeadId(selLead.id)} style={{ marginLeft:'auto', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#9B6CF0,#7c4de0)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:600, padding:'10px 18px', borderRadius:12, boxShadow:'0 6px 16px rgba(124,77,224,.3)', flexShrink:0 }}>
-                  ✦ Ficha do lead
+                <button onClick={() => setFichaLeadId(selLead.id)} style={{ marginLeft:'auto', border:'none', cursor:'pointer', background:'var(--accent)', color:'#fff', fontFamily:'inherit', fontSize:12.5, fontWeight:600, padding:'10px 18px', borderRadius:12, boxShadow:'0 6px 16px rgba(34,112,105,.3)', flexShrink:0, display:'flex', alignItems:'center', gap:6 }}>
+                  <Sparkles size={14} />
+                  Ficha do lead
                 </button>
               </div>
               <div style={{ flex:1, padding:22, display:'flex', flexDirection:'column', gap:12, background:'var(--mist)', overflowY:'auto', minHeight:280 }}>
                 <div style={{ alignSelf:'center', fontSize:11, fontWeight:600, color:'var(--sub)', background:'var(--card-bg)', borderRadius:10, padding:'3px 12px', boxShadow:'0 2px 6px rgba(30,70,66,.06)' }}>Informações do lead</div>
                 {selLead.notes && (
-                  <div style={{ maxWidth:'72%', background:'var(--card-bg)', color:'var(--ink)', alignSelf:'flex-start', borderRadius:'16px 16px 16px 5px', padding:'11px 15px', fontSize:13.5, lineHeight:1.45, boxShadow:'0 3px 8px rgba(30,70,66,.06)' }}>
-                    📝 {selLead.notes}
+                  <div style={{ maxWidth:'72%', background:'var(--card-bg)', color:'var(--ink)', alignSelf:'flex-start', borderRadius:'16px 16px 16px 5px', padding:'11px 15px', fontSize:13.5, lineHeight:1.45, boxShadow:'0 3px 8px rgba(30,70,66,.06)', display:'flex', alignItems:'flex-start', gap:8 }}>
+                    <StickyNote size={15} style={{ flexShrink:0, marginTop:2 }} />
+                    {selLead.notes}
                   </div>
                 )}
                 {/* agendamentos desse lead */}
                 {appointments.filter(a=>a.lead_id===selLead.id).map(a=>(
-                  <div key={a.id} style={{ alignSelf:'center', background:'#FCF3DF', color:'#7a5a12', fontSize:12, fontWeight:600, borderRadius:12, padding:'8px 14px', maxWidth:'80%', textAlign:'center' }}>
-                    🗓 {statusLabel[a.status] ?? a.status} — {new Date(a.appointment_date).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })} {a.notes ? `· ${a.notes}` : ''}
+                  <div key={a.id} style={{ alignSelf:'center', background:'#FCF3DF', color:'#7a5a12', fontSize:12, fontWeight:600, borderRadius:12, padding:'8px 14px', maxWidth:'80%', textAlign:'center', display:'inline-flex', alignItems:'center', gap:6 }}>
+                    <CalendarClock size={13} />
+                    {statusLabel[a.status] ?? a.status} — {new Date(a.appointment_date).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })} {a.notes ? `· ${a.notes}` : ''}
                   </div>
                 ))}
                 {!selLead.notes && appointments.filter(a=>a.lead_id===selLead.id).length===0 && !mensagensCarregando && mensagensSelLead.length===0 && (
@@ -432,9 +435,9 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
                 {!mensagensCarregando && totalMensagensSelLead > 5 && (
                   <button
                     onClick={() => onVerConversaCompleta?.(selLead.id)}
-                    style={{ alignSelf:'center', border:'none', background:'none', color:'var(--accent)', fontSize:12.5, fontWeight:600, cursor:'pointer', padding:'6px 4px', fontFamily:'inherit', textDecoration:'underline' }}
+                    style={{ alignSelf:'center', border:'none', background:'none', color:'var(--accent)', fontSize:12.5, fontWeight:600, cursor:'pointer', padding:'6px 4px', fontFamily:'inherit', textDecoration:'underline', display:'flex', alignItems:'center', gap:4 }}
                   >
-                    Ver conversa completa →
+                    Ver conversa completa <ArrowRight size={13} />
                   </button>
                 )}
               </div>
@@ -462,9 +465,9 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
                 <button
                   onClick={enviarMensagem}
                   disabled={enviandoMensagem || !mensagemTexto.trim()}
-                  style={{ border:'none', width:44, height:44, borderRadius:14, background: enviandoMensagem || !mensagemTexto.trim() ? 'var(--sub)' : 'var(--accent)', color:'#fff', fontSize:17, boxShadow:'0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer' }}
+                  style={{ border:'none', width:44, height:44, borderRadius:14, background: enviandoMensagem || !mensagemTexto.trim() ? 'var(--sub)' : 'var(--accent)', color:'#fff', fontSize:17, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer' }}
                 >
-                  {enviandoMensagem ? '…' : '➤'}
+                  {enviandoMensagem ? '…' : <Send size={17} />}
                 </button>
               </div>
               {erroEnvio && (
@@ -480,7 +483,9 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
       </div>
 
       {/* ── Analytics ── */}
-      <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:19, color:'#227069', margin:'6px 0 14px' }}>📈 Desempenho da semana</h3>
+      <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:19, color:'#227069', margin:'6px 0 14px', display:'flex', alignItems:'center', gap:8 }}>
+        <TrendingUp size={18} /> Desempenho da semana
+      </h3>
 
       <div className="bb-analytics-grid-2" style={{ display:'grid', gap:16, marginBottom:18 }}>
         {/* Barras */}

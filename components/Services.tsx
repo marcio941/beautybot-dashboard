@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -155,7 +156,10 @@ export default function Services() {
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>✨ Serviços</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>
+            <Sparkles size={26} />
+            Serviços
+          </h2>
           <p style={{ color: 'var(--sub)', fontSize: 13 }}>Catálogo de procedimentos oferecidos pela conta.</p>
         </div>
         <button

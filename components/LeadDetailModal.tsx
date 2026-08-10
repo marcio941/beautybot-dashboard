@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { X, MessageCircle, Stethoscope, AlertTriangle, Camera, Target } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -81,11 +82,13 @@ function BadgeOrigem({ origem }: { origem: string | null }) {
   const outbound = origem === 'outbound'
   return (
     <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
       background: outbound ? '#EDE4FC' : 'var(--mist)',
       color: outbound ? '#6A3BC0' : 'var(--accent)',
       fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '3px 10px', whiteSpace: 'nowrap',
     }}>
-      {outbound ? '🎯 Prospecção' : '💬 WhatsApp'}
+      {outbound ? <Target size={11} /> : <MessageCircle size={11} />}
+      {outbound ? 'Prospecção' : 'WhatsApp'}
     </span>
   )
 }
@@ -355,7 +358,7 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
               <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>{formatarTelefone(lead.phone)}</span>
             </div>
           </div>
-          <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--sub)' }}>✕</button>
+          <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', color: 'var(--sub)' }}><X size={18} /></button>
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -399,9 +402,11 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
               padding: '8px 10px', borderRadius: 10, border: aba === 'conversa' ? 'none' : '1px solid var(--line)',
               background: aba === 'conversa' ? '#227069' : 'var(--card-bg)',
               color: aba === 'conversa' ? '#fff' : 'var(--sub)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
-            💬 Conversa
+            <MessageCircle size={14} />
+            Conversa
           </button>
           <button
             onClick={() => setAba('procedimentos')}
@@ -410,9 +415,11 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
               padding: '8px 10px', borderRadius: 10, border: aba === 'procedimentos' ? 'none' : '1px solid var(--line)',
               background: aba === 'procedimentos' ? '#227069' : 'var(--card-bg)',
               color: aba === 'procedimentos' ? '#fff' : 'var(--sub)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
-            🩺 Procedimentos
+            <Stethoscope size={14} />
+            Procedimentos
           </button>
         </div>
 
@@ -524,7 +531,9 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
                               {f.tipo}
                             </span>
                             {!f.consentimento && (
-                              <span title="Sem consentimento para uso" style={{ position: 'absolute', top: 2, right: 2, fontSize: 12 }}>⚠️</span>
+                              <span title="Sem consentimento para uso" style={{ position: 'absolute', top: 2, right: 2, display: 'flex', color: '#fff', filter: 'drop-shadow(0 0 2px rgba(0,0,0,.6))' }}>
+                                <AlertTriangle size={13} />
+                              </span>
                             )}
                           </div>
                         ))}
@@ -533,9 +542,10 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
 
                     <button
                       onClick={() => abrirUploadFoto(h.id)}
-                      style={{ alignSelf: 'flex-start', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700, border: 'none', background: 'none', color: '#227069', cursor: 'pointer', padding: 0, marginTop: 4 }}
+                      style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700, border: 'none', background: 'none', color: '#227069', cursor: 'pointer', padding: 0, marginTop: 4 }}
                     >
-                      {uploadHistoricoId === h.id ? '✕ Cancelar' : '📷 Adicionar foto'}
+                      {uploadHistoricoId === h.id ? <X size={13} /> : <Camera size={13} />}
+                      {uploadHistoricoId === h.id ? 'Cancelar' : 'Adicionar foto'}
                     </button>
 
                     {uploadHistoricoId === h.id && (

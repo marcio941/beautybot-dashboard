@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { MessageSquare, Send, StickyNote } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -267,7 +268,10 @@ export default function Conversations({ initialLeadId }: { initialLeadId?: strin
 
   return (
     <div>
-      <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>💬 Conversas</h2>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>
+        <MessageSquare size={26} />
+        Conversas
+      </h2>
       <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 24 }}>Histórico completo de conversas via WhatsApp.</p>
 
       {erroLista && (
@@ -397,9 +401,9 @@ export default function Conversations({ initialLeadId }: { initialLeadId?: strin
                   <button
                     onClick={enviarMensagem}
                     disabled={enviandoMensagem || !mensagemTexto.trim()}
-                    style={{ border: 'none', width: 44, height: 44, borderRadius: 14, background: enviandoMensagem || !mensagemTexto.trim() ? 'var(--sub)' : 'var(--accent)', color: '#fff', fontSize: 17, boxShadow: '0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer', flexShrink: 0 }}
+                    style={{ border: 'none', width: 44, height: 44, borderRadius: 14, background: enviandoMensagem || !mensagemTexto.trim() ? 'var(--sub)' : 'var(--accent)', color: '#fff', fontSize: 17, boxShadow: '0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    {enviandoMensagem ? '…' : '➤'}
+                    {enviandoMensagem ? '…' : <Send size={17} />}
                   </button>
                 </div>
                 {erroEnvio && (
@@ -412,7 +416,10 @@ export default function Conversations({ initialLeadId }: { initialLeadId?: strin
           {leadSelecionado && (
             <div style={{ ...card(), width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
-                <b style={{ fontSize: 13.5, color: '#227069' }}>📝 Notas internas</b>
+                <b style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: '#227069' }}>
+                  <StickyNote size={14} />
+                  Notas internas
+                </b>
                 <p style={{ fontSize: 11.5, color: 'var(--sub)', margin: '2px 0 0' }}>Visíveis apenas para a equipe.</p>
               </div>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Sparkles, Repeat } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -242,12 +243,16 @@ export default function FollowUps() {
 
   return (
     <div>
-      <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>✨ Sugestões de Follow-up</h2>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>
+        <Sparkles size={26} />
+        Sugestões de Follow-up
+      </h2>
       <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 4 }}>
         Leads que finalizaram um atendimento há pelo menos 3 dias e ainda não receberam um follow-up.
       </p>
-      <p style={{ color: 'var(--sub)', fontSize: 11.5, marginBottom: 24 }}>
-        🔁 Serviços com padrão de recorrência conhecido (ex: unha, toxina) aparecem destacados como &quot;Hora da manutenção&quot;.
+      <p style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--sub)', fontSize: 11.5, marginBottom: 24 }}>
+        <Repeat size={12} />
+        Serviços com padrão de recorrência conhecido (ex: unha, toxina) aparecem destacados como &quot;Hora da manutenção&quot;.
       </p>
 
       {erroSugestoes && (
@@ -286,8 +291,9 @@ export default function FollowUps() {
                       <b style={{ fontSize: 13.5 }}>{s.leadName || 'Lead sem nome'}</b>
                       <span style={{ fontSize: 11.5, color: 'var(--sub)' }}>{formatarTelefone(s.leadPhone)}</span>
                       {s.manutencao && (
-                        <span style={{ background: '#F5C266', color: '#6B4A05', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '2px 9px' }}>
-                          🔁 Hora da manutenção
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#F5C266', color: '#6B4A05', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '2px 9px' }}>
+                          <Repeat size={11} />
+                          Hora da manutenção
                         </span>
                       )}
                     </div>
@@ -344,7 +350,10 @@ export default function FollowUps() {
         </div>
       )}
 
-      <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>🔁 Follow-ups</h2>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>
+        <Repeat size={26} />
+        Follow-ups
+      </h2>
       <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 24 }}>
         Histórico de follow-ups já enviados para os leads.
       </p>

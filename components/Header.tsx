@@ -7,7 +7,6 @@ import { useProfile } from '@/lib/hooks/useProfile'
 import ThemeToggle from './ThemeToggle'
 
 interface Props {
-  logoOverride?: string | null
   onNavigate?: (id: string) => void
   onToggleSidebar?: () => void
 }
@@ -18,13 +17,12 @@ const itemStyle: React.CSSProperties = {
   fontSize: 13, color: 'var(--ink)', padding: '9px 10px', borderRadius: 9, minHeight: 44,
 }
 
-export default function Header({ logoOverride, onNavigate, onToggleSidebar }: Props) {
+export default function Header({ onNavigate, onToggleSidebar }: Props) {
   const router = useRouter()
   const supabase = createClient()
-  const { userName, logoUrl, loading: profileLoading } = useProfile()
+  const { userName, userAvatarUrl, loading: profileLoading } = useProfile()
   const displayName = profileLoading ? 'Carregando...' : (userName || 'Usuário')
   const avatarInitial = userName ? userName.trim().charAt(0).toUpperCase() : '?'
-  const logoParaExibir = logoOverride !== undefined ? logoOverride : logoUrl
 
   const [menuAberto, setMenuAberto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -87,9 +85,9 @@ export default function Header({ logoOverride, onNavigate, onToggleSidebar }: Pr
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13,
               overflow: 'hidden', flexShrink: 0,
             }}>
-              {logoParaExibir ? (
+              {userAvatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoParaExibir} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={userAvatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 avatarInitial
               )}

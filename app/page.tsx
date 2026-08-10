@@ -60,7 +60,7 @@ export default function Home() {
         onClose={() => setSidebarOpen(false)}
       />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <Header logoOverride={logoOverride} onNavigate={navegar} onToggleSidebar={() => setSidebarOpen(v => !v)} />
+        <Header onNavigate={navegar} onToggleSidebar={() => setSidebarOpen(v => !v)} />
         <main className="bb-main" style={{ flex: 1, padding: '28px 30px' }}>
           {renderView()}
         </main>

@@ -1,6 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import {
+  Settings as SettingsIcon, Image as ImageIcon, Palette, Building2, Tag,
+  Clock, SlidersHorizontal, Wallet, MessageSquareText,
+  MessageSquare, QrCode, MapPin, ClipboardList,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -46,7 +51,7 @@ function parseHorarios(raw: unknown): Record<string, DiaHorario> {
 
 const secao = (style?: React.CSSProperties): React.CSSProperties => ({
   background: 'var(--card-bg)', border: '1px solid var(--line)', borderRadius: 14,
-  padding: 20, maxWidth: 420, marginTop: 20, ...style,
+  padding: 20, maxWidth: 640, marginTop: 20, ...style,
 })
 
 const campoLabel: React.CSSProperties = { fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }
@@ -67,6 +72,11 @@ const caixaErro: React.CSSProperties = {
   background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13, marginTop: 12,
 }
 
+const tituloSecao: React.CSSProperties = {
+  fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px',
+  display: 'flex', alignItems: 'center', gap: 8,
+}
+
 type TipoResposta = 'texto' | 'pix' | 'localizacao' | 'orientacao'
 
 interface RespostaRapidaRow {
@@ -76,11 +86,11 @@ interface RespostaRapidaRow {
   tipo: TipoResposta
 }
 
-const TIPOS_RESPOSTA: { value: TipoResposta; label: string }[] = [
-  { value: 'texto', label: '💬 Texto' },
-  { value: 'pix', label: '💰 Pix' },
-  { value: 'localizacao', label: '📍 Localização' },
-  { value: 'orientacao', label: '📋 Orientação' },
+const TIPOS_RESPOSTA: { value: TipoResposta; label: string; Icon: typeof MessageSquare }[] = [
+  { value: 'texto', label: 'Texto', Icon: MessageSquare },
+  { value: 'pix', label: 'Pix', Icon: QrCode },
+  { value: 'localizacao', label: 'Localização', Icon: MapPin },
+  { value: 'orientacao', label: 'Orientação', Icon: ClipboardList },
 ]
 
 export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Props) {
@@ -494,11 +504,13 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
 
   return (
     <div>
-      <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>⚙ Configurações</h2>
+      <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <SettingsIcon size={26} /> Configurações
+      </h2>
       <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 24 }}>Conexão Evolution API, N8N e variáveis do sistema.</p>
 
       <section style={secao({ marginTop: 0 })}>
-        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Logo da conta</h3>
+        <h3 style={tituloSecao}><ImageIcon size={16} /> Logo da conta</h3>
         <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Aparece no menu lateral e na página pública de agendamento.
         </p>
@@ -550,7 +562,7 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
       </section>
 
       <section style={secao()}>
-        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Cor de destaque</h3>
+        <h3 style={tituloSecao}><Palette size={16} /> Cor de destaque</h3>
         <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Personaliza a cor de marca usada na barra lateral e nos botões principais.
         </p>
@@ -589,11 +601,11 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
       </section>
 
       {configErro && (
-        <p style={{ ...caixaErro, maxWidth: 420 }}>{configErro}</p>
+        <p style={{ ...caixaErro, maxWidth: 640 }}>{configErro}</p>
       )}
 
       <section style={secao()}>
-        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Nome da conta</h3>
+        <h3 style={tituloSecao}><Building2 size={16} /> Nome da conta</h3>
         <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Aparece em destaque no topo do menu lateral.
         </p>
@@ -617,7 +629,7 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
       </section>
 
       <section style={secao()}>
-        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Rótulos da conta</h3>
+        <h3 style={tituloSecao}><Tag size={16} /> Rótulos da conta</h3>
         <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Como os termos aparecem na página pública de agendamento. Deixe o segmento em branco para escondê-lo.
         </p>
@@ -650,8 +662,8 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
         )}
       </section>
 
-      <section style={secao({ maxWidth: 520 })}>
-        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Horário de funcionamento</h3>
+      <section style={secao()}>
+        <h3 style={tituloSecao}><Clock size={16} /> Horário de funcionamento</h3>
         <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Dias e horários em que a conta aceita agendamentos.
         </p>
@@ -664,8 +676,8 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
               {DIAS.map((dia) => {
                 const d = horarios[dia.key] ?? { fechado: true, inicio: '09:00', fim: '18:00' }
                 return (
-                  <div key={dia.key} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', width: 128, flexShrink: 0 }}>
+                  <div key={dia.key} style={{ display: 'grid', gridTemplateColumns: '150px 108px 28px 108px', alignItems: 'center', gap: 10 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>
                       <input
                         type="checkbox"
                         checked={!d.fechado}
@@ -674,21 +686,21 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
                       {dia.label}
                     </label>
                     {d.fechado ? (
-                      <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>Fechado</span>
+                      <span style={{ fontSize: 12.5, color: 'var(--sub)', gridColumn: '2 / span 3' }}>Fechado</span>
                     ) : (
                       <>
                         <input
                           type="time"
                           value={d.inicio}
                           onChange={(e) => atualizarDia(dia.key, { inicio: e.target.value })}
-                          style={{ border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 8px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)' }}
+                          style={{ border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 8px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)', width: '100%', boxSizing: 'border-box' }}
                         />
-                        <span style={{ color: 'var(--sub)', fontSize: 12.5 }}>até</span>
+                        <span style={{ color: 'var(--sub)', fontSize: 12.5, textAlign: 'center' }}>até</span>
                         <input
                           type="time"
                           value={d.fim}
                           onChange={(e) => atualizarDia(dia.key, { fim: e.target.value })}
-                          style={{ border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 8px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)' }}
+                          style={{ border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 8px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)', width: '100%', boxSizing: 'border-box' }}
                         />
                       </>
                     )}
@@ -707,7 +719,7 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
       </section>
 
       <section style={secao()}>
-        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Regras de agendamento</h3>
+        <h3 style={tituloSecao}><SlidersHorizontal size={16} /> Regras de agendamento</h3>
         <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Controlam os horários oferecidos e a janela de agendamento.
         </p>
@@ -741,7 +753,7 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
       </section>
 
       <section style={secao()}>
-        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Sinal de agendamento</h3>
+        <h3 style={tituloSecao}><Wallet size={16} /> Sinal de agendamento</h3>
         <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Se ativado, a página pública pede um sinal antes de confirmar o horário.
         </p>
@@ -782,9 +794,9 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
         )}
       </section>
 
-      <section style={secao({ maxWidth: 560 })}>
+      <section style={secao()}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
-          <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: 0 }}>Respostas rápidas</h3>
+          <h3 style={{ ...tituloSecao, margin: 0 }}><MessageSquareText size={16} /> Respostas rápidas</h3>
           <button
             onClick={abrirNovaResposta}
             disabled={!contaId}
@@ -814,7 +826,8 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <b style={{ fontSize: 13 }}>{r.titulo}</b>
-                    <span style={{ background: 'var(--mist)', color: 'var(--sub)', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '2px 8px' }}>
+                    <span style={{ background: 'var(--mist)', color: 'var(--sub)', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {(() => { const TipoIcon = TIPOS_RESPOSTA.find(t => t.value === r.tipo)?.Icon; return TipoIcon ? <TipoIcon size={11} /> : null })()}
                       {TIPOS_RESPOSTA.find(t => t.value === r.tipo)?.label ?? r.tipo}
                     </span>
                   </div>
