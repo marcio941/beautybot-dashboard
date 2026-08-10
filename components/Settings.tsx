@@ -67,6 +67,22 @@ const caixaErro: React.CSSProperties = {
   background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13, marginTop: 12,
 }
 
+type TipoResposta = 'texto' | 'pix' | 'localizacao' | 'orientacao'
+
+interface RespostaRapidaRow {
+  id: string
+  titulo: string
+  texto: string
+  tipo: TipoResposta
+}
+
+const TIPOS_RESPOSTA: { value: TipoResposta; label: string }[] = [
+  { value: 'texto', label: '💬 Texto' },
+  { value: 'pix', label: '💰 Pix' },
+  { value: 'localizacao', label: '📍 Localização' },
+  { value: 'orientacao', label: '📋 Orientação' },
+]
+
 export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Props) {
   const { contaId, logoUrl, corDestaque, loading: perfilCarregando } = useProfile()
 
@@ -177,6 +193,126 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
   const [antecedenciaMaxima, setAntecedenciaMaxima] = useState('')
   const [regrasSalvando, setRegrasSalvando] = useState(false)
   const [regrasErro, setRegrasErro] = useState<string | null>(null)
+
+  // Respostas rápidas
+  const [respostas, setRespostas] = useState<RespostaRapidaRow[]>([])
+  const [respostasCarregando, setRespostasCarregando] = useState(true)
+  const [respostasErro, setRespostasErro] = useState<string | null>(null)
+  const [respostaAtualizandoId, setRespostaAtualizandoId] = useState<string | null>(null)
+
+  const [respostaModalAberto, setRespostaModalAberto] = useState(false)
+  const [respostaEditando, setRespostaEditando] = useState<RespostaRapidaRow | null>(null)
+  const [formRespTitulo, setFormRespTitulo] = useState('')
+  const [formRespTexto, setFormRespTexto] = useState('')
+  const [formRespTipo, setFormRespTipo] = useState<TipoResposta>('texto')
+  const [formRespErro, setFormRespErro] = useState<string | null>(null)
+  const [respostaSalvando, setRespostaSalvando] = useState(false)
+
+  useEffect(() => {
+    if (perfilCarregando) return
+    if (!contaId) { setRespostasCarregando(false); return }
+
+    let ativo = true
+    async function carregarRespostas() {
+      setRespostasCarregando(true)
+      setRespostasErro(null)
+      try {
+        const { data, error } = await supabase
+          .from('respostas_rapidas')
+          .select('id, titulo, texto, tipo')
+          .eq('conta_id', contaId)
+          .order('titulo', { ascending: true })
+        if (error) throw error
+        if (ativo) setRespostas((data ?? []) as RespostaRapidaRow[])
+      } catch (err) {
+        console.error('Erro ao buscar respostas rápidas:', err)
+        if (ativo) {
+          setRespostasErro('Não foi possível carregar as respostas rápidas.')
+          setRespostas([])
+        }
+      } finally {
+        if (ativo) setRespostasCarregando(false)
+      }
+    }
+    carregarRespostas()
+    return () => { ativo = false }
+  }, [contaId, perfilCarregando])
+
+  function abrirNovaResposta() {
+    setRespostaEditando(null)
+    setFormRespTitulo('')
+    setFormRespTexto('')
+    setFormRespTipo('texto')
+    setFormRespErro(null)
+    setRespostaModalAberto(true)
+  }
+
+  function abrirEditarResposta(r: RespostaRapidaRow) {
+    setRespostaEditando(r)
+    setFormRespTitulo(r.titulo)
+    setFormRespTexto(r.texto)
+    setFormRespTipo(r.tipo)
+    setFormRespErro(null)
+    setRespostaModalAberto(true)
+  }
+
+  function fecharModalResposta() {
+    if (respostaSalvando) return
+    setRespostaModalAberto(false)
+  }
+
+  async function salvarResposta() {
+    const titulo = formRespTitulo.trim()
+    const texto = formRespTexto.trim()
+
+    if (!titulo) { setFormRespErro('Informe o título da resposta.'); return }
+    if (!texto) { setFormRespErro('Informe o texto da resposta.'); return }
+
+    setFormRespErro(null)
+    setRespostaSalvando(true)
+    try {
+      if (respostaEditando) {
+        const { error } = await supabase
+          .from('respostas_rapidas')
+          .update({ titulo, texto, tipo: formRespTipo })
+          .eq('id', respostaEditando.id)
+        if (error) throw error
+        setRespostas(prev => prev.map(r => (r.id === respostaEditando.id ? { ...r, titulo, texto, tipo: formRespTipo } : r)).sort((a, b) => a.titulo.localeCompare(b.titulo)))
+      } else {
+        const { data, error } = await supabase
+          .from('respostas_rapidas')
+          .insert({ conta_id: contaId, titulo, texto, tipo: formRespTipo })
+          .select('id, titulo, texto, tipo')
+          .single()
+        if (error) throw error
+        setRespostas(prev => [...prev, data as RespostaRapidaRow].sort((a, b) => a.titulo.localeCompare(b.titulo)))
+      }
+      setRespostaModalAberto(false)
+    } catch (err) {
+      console.error('Erro ao salvar resposta rápida:', err)
+      setFormRespErro('Não foi possível salvar a resposta. Tente de novo.')
+    } finally {
+      setRespostaSalvando(false)
+    }
+  }
+
+  async function excluirResposta(r: RespostaRapidaRow) {
+    if (!window.confirm(`Excluir a resposta rápida "${r.titulo}"?`)) return
+    setRespostaAtualizandoId(r.id)
+    setRespostasErro(null)
+    const anteriores = respostas
+    setRespostas(prev => prev.filter(x => x.id !== r.id))
+    try {
+      const { error } = await supabase.from('respostas_rapidas').delete().eq('id', r.id)
+      if (error) throw error
+    } catch (err) {
+      console.error('Erro ao excluir resposta rápida:', err)
+      setRespostasErro('Não foi possível excluir a resposta. Tente de novo.')
+      setRespostas(anteriores)
+    } finally {
+      setRespostaAtualizandoId(null)
+    }
+  }
 
   useEffect(() => {
     if (perfilCarregando) return
@@ -569,6 +705,131 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
           </>
         )}
       </section>
+
+      <section style={secao({ maxWidth: 560 })}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
+          <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: 0 }}>Respostas rápidas</h3>
+          <button
+            onClick={abrirNovaResposta}
+            disabled={!contaId}
+            style={{
+              border: 'none', cursor: 'pointer', background: 'var(--accent)', color: '#fff',
+              fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '8px 14px',
+              borderRadius: 10, opacity: !contaId ? 0.6 : 1, flexShrink: 0,
+            }}
+          >
+            + Nova resposta
+          </button>
+        </div>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
+          Textos prontos disponíveis ao responder uma conversa.
+        </p>
+
+        {respostasErro && <p style={caixaErro}>{respostasErro}</p>}
+
+        {respostasCarregando ? (
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando…</p>
+        ) : respostas.length === 0 ? (
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Nenhuma resposta rápida cadastrada ainda.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {respostas.map((r) => (
+              <div key={r.id} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <b style={{ fontSize: 13 }}>{r.titulo}</b>
+                    <span style={{ background: 'var(--mist)', color: 'var(--sub)', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '2px 8px' }}>
+                      {TIPOS_RESPOSTA.find(t => t.value === r.tipo)?.label ?? r.tipo}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--sub)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.texto}</p>
+                </div>
+                <button
+                  onClick={() => abrirEditarResposta(r)}
+                  style={{ border: '1.5px solid var(--line)', background: 'var(--card-bg)', color: '#227069', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, padding: '7px 12px', borderRadius: 9, cursor: 'pointer', flexShrink: 0 }}
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => excluirResposta(r)}
+                  disabled={respostaAtualizandoId === r.id}
+                  style={{ border: 'none', background: '#FBE3DF', color: '#B5473A', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, padding: '7px 12px', borderRadius: 9, cursor: respostaAtualizandoId === r.id ? 'wait' : 'pointer', flexShrink: 0, opacity: respostaAtualizandoId === r.id ? 0.6 : 1 }}
+                >
+                  Excluir
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {respostaModalAberto && (
+        <div
+          onClick={fecharModalResposta}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(18,48,44,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 16 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'var(--card-bg)', borderRadius: 22, boxShadow: 'var(--shadow)', padding: 26, maxWidth: 420, width: '100%' }}
+          >
+            <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 18px' }}>
+              {respostaEditando ? 'Editar resposta rápida' : 'Nova resposta rápida'}
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <label style={campoLabel}>
+                Título
+                <input
+                  type="text"
+                  value={formRespTitulo}
+                  onChange={(e) => setFormRespTitulo(e.target.value)}
+                  placeholder="Ex: Chave Pix"
+                  style={campoInput}
+                />
+              </label>
+              <label style={campoLabel}>
+                Tipo
+                <select
+                  value={formRespTipo}
+                  onChange={(e) => setFormRespTipo(e.target.value as TipoResposta)}
+                  style={{ ...campoInput, cursor: 'pointer' }}
+                >
+                  {TIPOS_RESPOSTA.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </label>
+              <label style={campoLabel}>
+                Texto
+                <textarea
+                  value={formRespTexto}
+                  onChange={(e) => setFormRespTexto(e.target.value)}
+                  rows={4}
+                  placeholder="Texto que será inserido na conversa"
+                  style={{ ...campoInput, resize: 'vertical', boxSizing: 'border-box' }}
+                />
+              </label>
+            </div>
+
+            {formRespErro && <p style={caixaErro}>{formRespErro}</p>}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button
+                onClick={fecharModalResposta}
+                disabled={respostaSalvando}
+                style={{ flex: 1, border: 'none', background: 'var(--mist)', color: 'var(--sub)', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, padding: '11px 0', borderRadius: 10, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={salvarResposta}
+                disabled={respostaSalvando}
+                style={{ flex: 1, border: 'none', background: 'var(--accent)', color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, padding: '11px 0', borderRadius: 10, cursor: respostaSalvando ? 'wait' : 'pointer', opacity: respostaSalvando ? 0.7 : 1 }}
+              >
+                {respostaSalvando ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

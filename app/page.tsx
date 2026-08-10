@@ -38,7 +38,7 @@ export default function Home() {
   const renderView = () => {
     switch (view) {
       case 'dashboard':    return <Dashboard onVerConversaCompleta={abrirConversaCompleta} />
-      case 'appointments': return <Appointments />
+      case 'appointments': return <Appointments onAbrirConversa={abrirConversaCompleta} />
       case 'conversations':return <Conversations initialLeadId={leadParaConversas} />
       case 'kanban':       return <KanbanLeads />
       case 'services':     return <Services />

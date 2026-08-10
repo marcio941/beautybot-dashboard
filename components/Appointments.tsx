@@ -31,6 +31,38 @@ interface Agendamento extends AppointmentRow {
   profissionalNome: string | null
 }
 
+type StatusEspera = 'aguardando' | 'notificado' | 'atendido' | 'cancelado'
+
+interface EsperaRow {
+  id: string
+  lead_id: string
+  servico_id: string
+  data_desejada: string | null
+  status: StatusEspera
+}
+
+interface EsperaEnriquecida extends EsperaRow {
+  leadNome: string
+  leadTelefone: string | null
+  servicoNome: string | null
+}
+
+const STATUS_ESPERA_LABEL: Record<StatusEspera, string> = {
+  aguardando: 'Aguardando',
+  notificado: 'Notificado',
+  atendido: 'Atendido',
+  cancelado: 'Cancelado',
+}
+
+const STATUS_ESPERA_STYLE: Record<StatusEspera, { bg: string; color: string }> = {
+  aguardando: { bg: '#FCF3DF', color: '#8A6416' },
+  notificado: { bg: '#E3EEFC', color: '#2361B5' },
+  atendido: { bg: '#DFF7E9', color: '#1E7C46' },
+  cancelado: { bg: '#ECECEC', color: '#5C5C5C' },
+}
+
+const PROXIMIDADE_ESPERA_MS = 3 * 24 * 60 * 60 * 1000
+
 const TZ = 'America/Sao_Paulo'
 
 const STATUS_LABEL: Record<StatusAgendamento, string> = {
@@ -207,7 +239,7 @@ function ModalDetalhe({ a, atualizando, onFechar, onMudarStatus }: {
   )
 }
 
-export default function Appointments() {
+export default function Appointments({ onAbrirConversa }: { onAbrirConversa?: (leadId: string) => void } = {}) {
   const { contaId } = useProfile()
   const [montado, setMontado] = useState(false)
   const [visao, setVisao] = useState<Visao>('lista')
@@ -223,6 +255,22 @@ export default function Appointments() {
 
   const [referencia, setReferencia] = useState<string | null>(null)
   const [detalheId, setDetalheId] = useState<string | null>(null)
+
+  const [avisoCancelamento, setAvisoCancelamento] = useState<{ agendamento: Agendamento; esperando: EsperaEnriquecida[] } | null>(null)
+
+  const [listaEspera, setListaEspera] = useState<EsperaEnriquecida[]>([])
+  const [carregandoEspera, setCarregandoEspera] = useState(true)
+  const [erroEspera, setErroEspera] = useState<string | null>(null)
+  const [atualizandoEsperaId, setAtualizandoEsperaId] = useState<string | null>(null)
+
+  const [leadsOpcoes, setLeadsOpcoes] = useState<LeadInfo[]>([])
+  const [servicosOpcoes, setServicosOpcoes] = useState<ServicoInfo[]>([])
+
+  const [formEsperaLeadId, setFormEsperaLeadId] = useState('')
+  const [formEsperaServicoId, setFormEsperaServicoId] = useState('')
+  const [formEsperaData, setFormEsperaData] = useState('')
+  const [formErroEspera, setFormErroEspera] = useState<string | null>(null)
+  const [salvandoEspera, setSalvandoEspera] = useState(false)
 
   useEffect(() => {
     setMontado(true)
@@ -244,6 +292,154 @@ export default function Appointments() {
     carregarProfissionais()
     return () => { ativo = false }
   }, [contaId])
+
+  useEffect(() => {
+    if (!contaId) return
+    let ativo = true
+    async function carregarOpcoes() {
+      const [leadsRes, servicosRes] = await Promise.all([
+        supabase.from('leads').select('id, name, phone').eq('conta_id', contaId).order('name', { ascending: true }),
+        supabase.from('servicos').select('id, nome').eq('conta_id', contaId).eq('ativo', true).order('nome', { ascending: true }),
+      ])
+      if (leadsRes.error) console.error('Erro ao buscar leads:', leadsRes.error.message)
+      if (servicosRes.error) console.error('Erro ao buscar serviços:', servicosRes.error.message)
+      if (!ativo) return
+      setLeadsOpcoes((leadsRes.data ?? []) as LeadInfo[])
+      setServicosOpcoes((servicosRes.data ?? []) as ServicoInfo[])
+    }
+    carregarOpcoes()
+    return () => { ativo = false }
+  }, [contaId])
+
+  const carregarEspera = useCallback(async () => {
+    setCarregandoEspera(true)
+    setErroEspera(null)
+    try {
+      const { data, error } = await supabase
+        .from('lista_espera')
+        .select('id, lead_id, servico_id, data_desejada, status')
+        .order('status', { ascending: true })
+      if (error) throw error
+
+      const linhas = (data ?? []) as EsperaRow[]
+      const leadIds = Array.from(new Set(linhas.map((l) => l.lead_id).filter((v): v is string => !!v)))
+      const servicoIds = Array.from(new Set(linhas.map((l) => l.servico_id).filter((v): v is string => !!v)))
+
+      const [leadsData, servicosData] = await Promise.all([
+        buscarPorIds<LeadInfo>('leads', 'id, name, phone', leadIds),
+        buscarPorIds<ServicoInfo>('servicos', 'id, nome', servicoIds),
+      ])
+      const leadsMap = new Map(leadsData.map((l) => [l.id, l]))
+      const servicosMap = new Map(servicosData.map((s) => [s.id, s.nome]))
+
+      const enriquecidos: EsperaEnriquecida[] = linhas.map((l) => ({
+        ...l,
+        leadNome: leadsMap.get(l.lead_id)?.name || 'Cliente',
+        leadTelefone: leadsMap.get(l.lead_id)?.phone ?? null,
+        servicoNome: l.servico_id ? servicosMap.get(l.servico_id) ?? null : null,
+      }))
+
+      setListaEspera(enriquecidos)
+    } catch (err) {
+      console.error('Erro ao carregar lista de espera:', err)
+      setErroEspera('Não foi possível carregar a lista de espera. Tente recarregar.')
+      setListaEspera([])
+    } finally {
+      setCarregandoEspera(false)
+    }
+  }, [])
+
+  useEffect(() => { carregarEspera() }, [carregarEspera])
+
+  const verificarEspera = useCallback(async (agendamentoCancelado: Agendamento) => {
+    if (!agendamentoCancelado.servico_id) return
+    try {
+      const { data, error } = await supabase
+        .from('lista_espera')
+        .select('id, lead_id, servico_id, data_desejada, status')
+        .eq('servico_id', agendamentoCancelado.servico_id)
+        .eq('status', 'aguardando')
+      if (error) throw error
+
+      const candidatos = (data ?? []) as EsperaRow[]
+      const alvo = new Date(agendamentoCancelado.appointment_date).getTime()
+      const proximos = candidatos.filter((c) => {
+        if (!c.data_desejada) return true
+        return Math.abs(new Date(c.data_desejada).getTime() - alvo) <= PROXIMIDADE_ESPERA_MS
+      })
+      if (proximos.length === 0) return
+
+      const leadIds = Array.from(new Set(proximos.map((p) => p.lead_id)))
+      const leadsData = await buscarPorIds<LeadInfo>('leads', 'id, name, phone', leadIds)
+      const leadsMap = new Map(leadsData.map((l) => [l.id, l]))
+
+      const enriquecidos: EsperaEnriquecida[] = proximos.map((p) => ({
+        ...p,
+        leadNome: leadsMap.get(p.lead_id)?.name || 'Cliente',
+        leadTelefone: leadsMap.get(p.lead_id)?.phone ?? null,
+        servicoNome: agendamentoCancelado.servicoNome,
+      }))
+
+      setAvisoCancelamento({ agendamento: agendamentoCancelado, esperando: enriquecidos })
+    } catch (err) {
+      console.error('Erro ao verificar lista de espera:', err)
+    }
+  }, [])
+
+  async function adicionarEspera() {
+    if (!contaId || salvandoEspera) return
+    if (!formEsperaLeadId) { setFormErroEspera('Selecione o lead.'); return }
+    if (!formEsperaServicoId) { setFormErroEspera('Selecione o serviço.'); return }
+
+    setFormErroEspera(null)
+    setSalvandoEspera(true)
+    try {
+      const payload: { conta_id: string; lead_id: string; servico_id: string; status: StatusEspera; data_desejada?: string } = {
+        conta_id: contaId, lead_id: formEsperaLeadId, servico_id: formEsperaServicoId, status: 'aguardando',
+      }
+      if (formEsperaData) payload.data_desejada = new Date(formEsperaData).toISOString()
+
+      const { data, error } = await supabase
+        .from('lista_espera')
+        .insert(payload)
+        .select('id, lead_id, servico_id, data_desejada, status')
+        .single()
+      if (error) throw error
+
+      const lead = leadsOpcoes.find((l) => l.id === formEsperaLeadId)
+      const servico = servicosOpcoes.find((s) => s.id === formEsperaServicoId)
+      const novo: EsperaEnriquecida = {
+        ...(data as EsperaRow),
+        leadNome: lead?.name || 'Cliente',
+        leadTelefone: lead?.phone ?? null,
+        servicoNome: servico?.nome ?? null,
+      }
+      setListaEspera((prev) => [novo, ...prev])
+      setFormEsperaLeadId('')
+      setFormEsperaServicoId('')
+      setFormEsperaData('')
+    } catch (err) {
+      console.error('Erro ao adicionar à lista de espera:', err)
+      setFormErroEspera('Não foi possível adicionar à lista de espera. Tente de novo.')
+    } finally {
+      setSalvandoEspera(false)
+    }
+  }
+
+  async function mudarStatusEspera(id: string, status: StatusEspera) {
+    setAtualizandoEsperaId(id)
+    setErroEspera(null)
+    try {
+      const { error } = await supabase.from('lista_espera').update({ status }).eq('id', id)
+      if (error) throw error
+      setListaEspera((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)))
+    } catch (err) {
+      console.error('Erro ao atualizar status da lista de espera:', err)
+      setErroEspera('Não foi possível atualizar o status. Tente de novo.')
+    } finally {
+      setAtualizandoEsperaId(null)
+    }
+  }
 
   const usaProfissionais = profissionais.length > 0
   const mostrarFiltroProfissional = profissionais.length > 1
@@ -302,14 +498,18 @@ export default function Appointments() {
     try {
       const { error } = await supabase.from('appointments').update({ status }).eq('id', id)
       if (error) throw error
-      setAgendamentos((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
+      setAgendamentos((prev) => {
+        const alvo = prev.find((a) => a.id === id)
+        if (status === 'cancelled' && alvo) verificarEspera({ ...alvo, status })
+        return prev.map((a) => (a.id === id ? { ...a, status } : a))
+      })
     } catch (err) {
       console.error('Erro ao atualizar status:', err)
       setErro('Não foi possível atualizar o status. Tente de novo.')
     } finally {
       setAtualizandoId(null)
     }
-  }, [])
+  }, [verificarEspera])
 
   const agendamentosVisiveis = useMemo(
     () => (mostrarFiltroProfissional && filtroProfissional !== 'todos'
@@ -393,6 +593,44 @@ export default function Appointments() {
       </div>
 
       {erro && <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 12, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>{erro}</p>}
+
+      {avisoCancelamento && (
+        <div style={{ background: '#FCF3DF', border: '1px solid #F0D889', borderRadius: 14, padding: '14px 18px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <b style={{ fontSize: 13.5, color: '#8A6416' }}>
+                ⚠️ {avisoCancelamento.esperando.length} {avisoCancelamento.esperando.length === 1 ? 'pessoa está esperando' : 'pessoas estão esperando'} por esse horário
+              </b>
+              <p style={{ fontSize: 12.5, color: '#8A6416', margin: '4px 0 0' }}>
+                {avisoCancelamento.agendamento.servicoNome ?? 'Serviço'} — {fmtCompleto.format(new Date(avisoCancelamento.agendamento.appointment_date))}
+              </p>
+            </div>
+            <button
+              onClick={() => setAvisoCancelamento(null)}
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, color: '#8A6416' }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+            {avisoCancelamento.esperando.map((e) => (
+              <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: '#fff', borderRadius: 10, padding: '8px 12px', flexWrap: 'wrap' }}>
+                <div>
+                  <b style={{ fontSize: 12.5 }}>{e.leadNome}</b>
+                  <span style={{ fontSize: 11.5, color: 'var(--sub)', marginLeft: 8 }}>{formatarTelefone(e.leadTelefone)}</span>
+                </div>
+                <button
+                  onClick={() => onAbrirConversa?.(e.lead_id)}
+                  disabled={!onAbrirConversa}
+                  style={{ border: 'none', background: '#227069', color: '#fff', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600, padding: '6px 12px', borderRadius: 8, cursor: onAbrirConversa ? 'pointer' : 'default', opacity: onAbrirConversa ? 1 : 0.5 }}
+                >
+                  Ver conversa
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {visao === 'lista' ? (
         <section style={card()}>
@@ -509,6 +747,117 @@ export default function Appointments() {
           )}
         </section>
       )}
+
+      <section style={{ ...card(), padding: '20px 22px', marginTop: 22 }}>
+        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 20, color: '#227069', margin: '0 0 4px' }}>🕒 Lista de Espera</h3>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 18px' }}>
+          Clientes aguardando um horário para um serviço específico.
+        </p>
+
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 16 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', flex: '1 1 180px' }}>
+            Lead
+            <select
+              value={formEsperaLeadId}
+              onChange={(e) => setFormEsperaLeadId(e.target.value)}
+              style={{ display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)', borderRadius: 10, padding: '9px 10px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)', cursor: 'pointer', boxSizing: 'border-box' }}
+            >
+              <option value="">Selecione…</option>
+              {leadsOpcoes.map((l) => (
+                <option key={l.id} value={l.id}>{l.name || formatarTelefone(l.phone)}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', flex: '1 1 180px' }}>
+            Serviço
+            <select
+              value={formEsperaServicoId}
+              onChange={(e) => setFormEsperaServicoId(e.target.value)}
+              style={{ display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)', borderRadius: 10, padding: '9px 10px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)', cursor: 'pointer', boxSizing: 'border-box' }}
+            >
+              <option value="">Selecione…</option>
+              {servicosOpcoes.map((s) => (
+                <option key={s.id} value={s.id}>{s.nome}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', flex: '1 1 180px' }}>
+            Data desejada (opcional)
+            <input
+              type="datetime-local"
+              value={formEsperaData}
+              onChange={(e) => setFormEsperaData(e.target.value)}
+              style={{ display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)', borderRadius: 10, padding: '8px 10px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)', boxSizing: 'border-box' }}
+            />
+          </label>
+          <button
+            onClick={adicionarEspera}
+            disabled={salvandoEspera || !contaId}
+            style={{
+              border: 'none', cursor: salvandoEspera ? 'wait' : 'pointer', background: 'var(--accent)', color: '#fff',
+              fontFamily: 'inherit', fontSize: 13, fontWeight: 600, padding: '10px 18px',
+              borderRadius: 10, opacity: salvandoEspera || !contaId ? 0.6 : 1, flexShrink: 0,
+            }}
+          >
+            {salvandoEspera ? 'Adicionando…' : '+ Adicionar'}
+          </button>
+        </div>
+
+        {formErroEspera && (
+          <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13, marginBottom: 14 }}>{formErroEspera}</p>
+        )}
+        {erroEspera && (
+          <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13, marginBottom: 14 }}>{erroEspera}</p>
+        )}
+
+        {carregandoEspera ? (
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando lista de espera…</p>
+        ) : listaEspera.length === 0 ? (
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Ninguém na lista de espera no momento.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {listaEspera.map((e) => {
+              const s = STATUS_ESPERA_STYLE[e.status]
+              return (
+                <div key={e.id} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                    <b style={{ fontSize: 13 }}>{e.leadNome}</b>
+                    <span style={{ fontSize: 11.5, color: 'var(--sub)', marginLeft: 8 }}>{formatarTelefone(e.leadTelefone)}</span>
+                  </div>
+                  <div style={{ flex: '1 1 140px', fontSize: 12.5, color: 'var(--ink)' }}>{e.servicoNome ?? '—'}</div>
+                  <div style={{ flex: '1 1 160px', fontSize: 12.5, color: '#227069', fontWeight: 600 }}>
+                    {e.data_desejada ? fmtCompleto.format(new Date(e.data_desejada)) : 'Qualquer horário'}
+                  </div>
+                  <span style={{ background: s.bg, color: s.color, fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '3px 10px', whiteSpace: 'nowrap' }}>
+                    {STATUS_ESPERA_LABEL[e.status]}
+                  </span>
+                  <select
+                    value={e.status}
+                    disabled={atualizandoEsperaId === e.id}
+                    onChange={(ev) => mudarStatusEspera(e.id, ev.target.value as StatusEspera)}
+                    style={{
+                      fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: '#227069',
+                      border: '1.5px solid var(--line)', borderRadius: 10, padding: '6px 8px',
+                      background: 'var(--card-bg)', cursor: atualizandoEsperaId === e.id ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {(Object.keys(STATUS_ESPERA_LABEL) as StatusEspera[]).map((st) => (
+                      <option key={st} value={st}>{STATUS_ESPERA_LABEL[st]}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => onAbrirConversa?.(e.lead_id)}
+                    disabled={!onAbrirConversa}
+                    style={{ border: '1.5px solid var(--line)', background: 'var(--card-bg)', color: '#227069', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, padding: '7px 12px', borderRadius: 9, cursor: onAbrirConversa ? 'pointer' : 'default', flexShrink: 0, opacity: onAbrirConversa ? 1 : 0.5 }}
+                  >
+                    Ver conversa
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
 
       {detalhe && (
         <ModalDetalhe
