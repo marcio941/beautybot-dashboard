@@ -16,8 +16,8 @@ import { useProfile } from '@/lib/hooks/useProfile'
 import LeadDetailModal, { LeadRow } from '@/components/LeadDetailModal'
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
-  background: '#fff', borderRadius: 22,
-  boxShadow: '0 10px 30px rgba(30,70,66,.08)', ...style,
+  background: 'var(--card-bg)', borderRadius: 22,
+  boxShadow: 'var(--shadow)', ...style,
 })
 
 const formatarTelefone = (phone: string | null) => {
@@ -65,7 +65,7 @@ function CardLead({ lead, onAbrir }: { lead: LeadRow; onAbrir: (id: string) => v
           <b style={{ fontSize: 12.5, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {lead.name || 'Sem nome'}
           </b>
-          <span style={{ fontSize: 11, color: '#6E807D' }}>{formatarTelefone(lead.phone)}</span>
+          <span style={{ fontSize: 11, color: 'var(--sub)' }}>{formatarTelefone(lead.phone)}</span>
         </div>
       </div>
       <div style={{ marginTop: 8 }}>
@@ -88,14 +88,14 @@ function Coluna({ categoria, leads, onAbrir }: { categoria: string; leads: LeadR
       <div
         ref={setNodeRef}
         style={{
-          flex: 1, minHeight: 120, background: isOver ? '#EAF4F2' : '#F2F7F6',
+          flex: 1, minHeight: 120, background: isOver ? '#EAF4F2' : 'var(--mist)',
           border: isOver ? '1.5px dashed #2E8F87' : '1.5px dashed transparent',
           borderRadius: 16, padding: 8, display: 'flex', flexDirection: 'column', gap: 8,
           maxHeight: 620, overflowY: 'auto', transition: 'background .12s',
         }}
       >
         {leads.length === 0 && (
-          <p style={{ color: '#9BB0AD', fontSize: 12, textAlign: 'center', padding: '20px 4px' }}>Nenhum lead aqui.</p>
+          <p style={{ color: 'var(--sub)', fontSize: 12, textAlign: 'center', padding: '20px 4px' }}>Nenhum lead aqui.</p>
         )}
         {leads.map((l) => <CardLead key={l.id} lead={l} onAbrir={onAbrir} />)}
       </div>
@@ -186,7 +186,7 @@ export default function KanbanLeads() {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>📋 Kanban de Leads</h2>
-          <p style={{ color: '#6E807D', fontSize: 13 }}>Arraste os cards entre as colunas para mudar o status do lead.</p>
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Arraste os cards entre as colunas para mudar o status do lead.</p>
         </div>
         <input
           type="text"
@@ -194,8 +194,8 @@ export default function KanbanLeads() {
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por nome ou telefone…"
           style={{
-            border: '1.5px solid #DFE9E7', borderRadius: 12, padding: '10px 16px',
-            fontFamily: 'inherit', fontSize: 13, outline: 'none', minWidth: 240, background: '#fff',
+            border: '1.5px solid var(--line)', borderRadius: 12, padding: '10px 16px',
+            fontFamily: 'inherit', fontSize: 13, outline: 'none', minWidth: 240, background: 'var(--card-bg)', color: 'var(--ink)',
           }}
         />
       </div>
@@ -203,9 +203,9 @@ export default function KanbanLeads() {
       {erro && <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 12, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>{erro}</p>}
 
       {perfilCarregando || carregando ? (
-        <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando leads…</p>
+        <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando leads…</p>
       ) : categorias.length === 0 ? (
-        <p style={{ color: '#9BB0AD', fontSize: 13 }}>Nenhuma categoria de kanban configurada para esta conta.</p>
+        <p style={{ color: 'var(--sub)', fontSize: 13 }}>Nenhuma categoria de kanban configurada para esta conta.</p>
       ) : (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 8 }}>

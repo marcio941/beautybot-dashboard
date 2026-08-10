@@ -41,15 +41,16 @@ function parseHorarios(raw: unknown): Record<string, DiaHorario> {
 }
 
 const secao = (style?: React.CSSProperties): React.CSSProperties => ({
-  background: '#fff', border: '1px solid #E3ECE9', borderRadius: 14,
+  background: 'var(--card-bg)', border: '1px solid var(--line)', borderRadius: 14,
   padding: 20, maxWidth: 420, marginTop: 20, ...style,
 })
 
-const campoLabel: React.CSSProperties = { fontSize: 12.5, fontWeight: 600, color: '#3A5754' }
+const campoLabel: React.CSSProperties = { fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }
 
 const campoInput: React.CSSProperties = {
-  display: 'block', width: '100%', marginTop: 6, border: '1.5px solid #DFE9E7',
+  display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
   borderRadius: 10, padding: '9px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
+  background: 'var(--card-bg)', color: 'var(--ink)',
 }
 
 const botaoSalvar = (desabilitado: boolean): React.CSSProperties => ({
@@ -288,27 +289,27 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
   return (
     <div>
       <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>⚙ Configurações</h2>
-      <p style={{ color: '#6E807D', fontSize: 13, marginBottom: 24 }}>Conexão Evolution API, N8N e variáveis do sistema.</p>
+      <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 24 }}>Conexão Evolution API, N8N e variáveis do sistema.</p>
 
       <section style={secao({ marginTop: 0 })}>
         <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Logo da conta</h3>
-        <p style={{ color: '#6E807D', fontSize: 13, margin: '0 0 16px' }}>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Aparece no menu lateral e na página pública de agendamento.
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
           <div style={{
-            width: 64, height: 64, borderRadius: 14, background: '#F4F9F7',
-            border: '1px solid #E3ECE9', display: 'flex', alignItems: 'center',
+            width: 64, height: 64, borderRadius: 14, background: 'var(--mist)',
+            border: '1px solid var(--line)', display: 'flex', alignItems: 'center',
             justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
           }}>
             {perfilCarregando ? (
-              <span style={{ fontSize: 12, color: '#6E807D' }}>...</span>
+              <span style={{ fontSize: 12, color: 'var(--sub)' }}>...</span>
             ) : logoAtual ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoAtual} alt="Logo atual" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <span style={{ fontSize: 12, color: '#6E807D', textAlign: 'center', padding: 4 }}>Sem logo</span>
+              <span style={{ fontSize: 12, color: 'var(--sub)', textAlign: 'center', padding: 4 }}>Sem logo</span>
             )}
           </div>
 
@@ -348,12 +349,12 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
 
       <section style={secao()}>
         <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Nome da conta</h3>
-        <p style={{ color: '#6E807D', fontSize: 13, margin: '0 0 16px' }}>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Aparece em destaque no topo do menu lateral.
         </p>
 
         {configCarregando ? (
-          <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando…</p>
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando…</p>
         ) : (
           <>
             <label style={campoLabel}>
@@ -372,12 +373,12 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
 
       <section style={secao()}>
         <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Rótulos da conta</h3>
-        <p style={{ color: '#6E807D', fontSize: 13, margin: '0 0 16px' }}>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Como os termos aparecem na página pública de agendamento. Deixe o segmento em branco para escondê-lo.
         </p>
 
         {configCarregando ? (
-          <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando…</p>
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando…</p>
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -406,12 +407,12 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
 
       <section style={secao({ maxWidth: 520 })}>
         <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Horário de funcionamento</h3>
-        <p style={{ color: '#6E807D', fontSize: 13, margin: '0 0 16px' }}>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Dias e horários em que a conta aceita agendamentos.
         </p>
 
         {configCarregando ? (
-          <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando…</p>
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando…</p>
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -419,7 +420,7 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
                 const d = horarios[dia.key] ?? { fechado: true, inicio: '09:00', fim: '18:00' }
                 return (
                   <div key={dia.key} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: '#3A5754', width: 128, flexShrink: 0 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', width: 128, flexShrink: 0 }}>
                       <input
                         type="checkbox"
                         checked={!d.fechado}
@@ -428,21 +429,21 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
                       {dia.label}
                     </label>
                     {d.fechado ? (
-                      <span style={{ fontSize: 12.5, color: '#9BB0AD' }}>Fechado</span>
+                      <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>Fechado</span>
                     ) : (
                       <>
                         <input
                           type="time"
                           value={d.inicio}
                           onChange={(e) => atualizarDia(dia.key, { inicio: e.target.value })}
-                          style={{ border: '1.5px solid #DFE9E7', borderRadius: 8, padding: '6px 8px', fontFamily: 'inherit', fontSize: 13 }}
+                          style={{ border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 8px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)' }}
                         />
-                        <span style={{ color: '#6E807D', fontSize: 12.5 }}>até</span>
+                        <span style={{ color: 'var(--sub)', fontSize: 12.5 }}>até</span>
                         <input
                           type="time"
                           value={d.fim}
                           onChange={(e) => atualizarDia(dia.key, { fim: e.target.value })}
-                          style={{ border: '1.5px solid #DFE9E7', borderRadius: 8, padding: '6px 8px', fontFamily: 'inherit', fontSize: 13 }}
+                          style={{ border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 8px', fontFamily: 'inherit', fontSize: 13, background: 'var(--card-bg)', color: 'var(--ink)' }}
                         />
                       </>
                     )}
@@ -462,12 +463,12 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
 
       <section style={secao()}>
         <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Regras de agendamento</h3>
-        <p style={{ color: '#6E807D', fontSize: 13, margin: '0 0 16px' }}>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
           Controlam os horários oferecidos e a janela de agendamento.
         </p>
 
         {configCarregando ? (
-          <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando…</p>
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando…</p>
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

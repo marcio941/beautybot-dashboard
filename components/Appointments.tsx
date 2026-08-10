@@ -85,12 +85,12 @@ const formatarTelefone = (phone: string | null) => {
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
-  background: '#fff', borderRadius: 22,
-  boxShadow: '0 10px 30px rgba(30,70,66,.08)', ...style,
+  background: 'var(--card-bg)', borderRadius: 22,
+  boxShadow: 'var(--shadow)', ...style,
 })
 
 const navBtnStyle: React.CSSProperties = {
-  border: '1.5px solid #DFE9E7', background: '#fff', color: '#227069',
+  border: '1.5px solid var(--line)', background: 'var(--card-bg)', color: '#227069',
   width: 36, height: 36, borderRadius: 10, cursor: 'pointer', fontSize: 16, fontWeight: 700,
 }
 
@@ -125,8 +125,8 @@ function SeletorStatus({ value, disabled, onChange }: {
       onChange={(e) => onChange(e.target.value as StatusAgendamento)}
       style={{
         fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: '#227069',
-        border: '1.5px solid #DFE9E7', borderRadius: 10, padding: '6px 8px',
-        background: '#fff', cursor: disabled ? 'wait' : 'pointer',
+        border: '1.5px solid var(--line)', borderRadius: 10, padding: '6px 8px',
+        background: 'var(--card-bg)', cursor: disabled ? 'wait' : 'pointer',
       }}
     >
       {(Object.keys(STATUS_LABEL) as StatusAgendamento[]).map((s) => (
@@ -143,15 +143,15 @@ function LinhaAgendamento({ a, atualizando, onMudarStatus, onAbrirDetalhe }: {
   onAbrirDetalhe: (id: string) => void
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderBottom: '1px solid #EEF3F2', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderBottom: '1px solid var(--line)', flexWrap: 'wrap' }}>
       <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#E7F2F0', color: '#227069', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
         {a.clienteNome.charAt(0).toUpperCase()}
       </div>
       <div style={{ flex: '1 1 160px', minWidth: 0, cursor: 'pointer' }} onClick={() => onAbrirDetalhe(a.id)}>
-        <b style={{ fontSize: 13.5, display: 'block' }}>{a.clienteNome}</b>
-        <small style={{ fontSize: 11.5, color: '#6E807D' }}>{formatarTelefone(a.clienteTelefone)}</small>
+        <b style={{ fontSize: 13.5, display: 'block', color: 'var(--ink)' }}>{a.clienteNome}</b>
+        <small style={{ fontSize: 11.5, color: 'var(--sub)' }}>{formatarTelefone(a.clienteTelefone)}</small>
       </div>
-      <div style={{ flex: '1 1 140px', fontSize: 12.5, color: '#3A5754' }}>{a.servicoNome ?? '—'}</div>
+      <div style={{ flex: '1 1 140px', fontSize: 12.5, color: 'var(--ink)' }}>{a.servicoNome ?? '—'}</div>
       <div style={{ flex: '1 1 210px', fontSize: 12.5, color: '#227069', fontWeight: 600, textTransform: 'capitalize' }}>
         {fmtCompleto.format(new Date(a.appointment_date))}
       </div>
@@ -178,15 +178,15 @@ function ModalDetalhe({ a, atualizando, onFechar, onMudarStatus }: {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
           <div>
             <b style={{ fontSize: 16, display: 'block' }}>{a.clienteNome}</b>
-            <span style={{ fontSize: 12.5, color: '#6E807D' }}>{formatarTelefone(a.clienteTelefone)}</span>
+            <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>{formatarTelefone(a.clienteTelefone)}</span>
           </div>
-          <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#6E807D' }}>✕</button>
+          <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--sub)' }}>✕</button>
         </div>
-        <p style={{ fontSize: 13, color: '#3A5754', marginBottom: 6 }}><b>Serviço:</b> {a.servicoNome ?? '—'}</p>
-        <p style={{ fontSize: 13, color: '#3A5754', marginBottom: 6, textTransform: 'capitalize' }}>
+        <p style={{ fontSize: 13, color: 'var(--ink)', marginBottom: 6 }}><b>Serviço:</b> {a.servicoNome ?? '—'}</p>
+        <p style={{ fontSize: 13, color: 'var(--ink)', marginBottom: 6, textTransform: 'capitalize' }}>
           <b>Quando:</b> {fmtCompleto.format(new Date(a.appointment_date))}
         </p>
-        {a.notes && <p style={{ fontSize: 13, color: '#3A5754', marginBottom: 6 }}><b>Observação:</b> {a.notes}</p>}
+        {a.notes && <p style={{ fontSize: 13, color: 'var(--ink)', marginBottom: 6 }}><b>Observação:</b> {a.notes}</p>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }}>
           <BadgeStatus status={a.status} />
           <SeletorStatus value={a.status} disabled={atualizando} onChange={(s) => onMudarStatus(a.id, s)} />
@@ -312,7 +312,7 @@ export default function Appointments() {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>🗓 Agendamentos</h2>
-          <p style={{ color: '#6E807D', fontSize: 13 }}>Gerencie todos os agendamentos da clínica.</p>
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Gerencie todos os agendamentos da clínica.</p>
         </div>
         <div style={{ ...card(), padding: 5, display: 'flex', gap: 4 }}>
           {(['lista', 'calendario'] as Visao[]).map((v) => (
@@ -321,7 +321,7 @@ export default function Appointments() {
               onClick={() => setVisao(v)}
               style={{
                 border: 'none', background: visao === v ? '#2E8F87' : 'none',
-                color: visao === v ? '#fff' : '#6E807D', fontFamily: 'inherit',
+                color: visao === v ? '#fff' : 'var(--sub)', fontFamily: 'inherit',
                 fontSize: 12, fontWeight: 600, padding: '7px 16px', borderRadius: 10, cursor: 'pointer',
                 boxShadow: visao === v ? '0 4px 10px rgba(46,143,135,.3)' : 'none',
               }}
@@ -342,9 +342,9 @@ export default function Appointments() {
                 key={f.id}
                 onClick={() => setFiltro(f.id)}
                 style={{
-                  border: '1.5px solid', borderColor: filtro === f.id ? '#2E8F87' : '#DFE9E7',
-                  background: filtro === f.id ? '#2E8F87' : '#fff',
-                  color: filtro === f.id ? '#fff' : '#6E807D',
+                  border: '1.5px solid', borderColor: filtro === f.id ? '#2E8F87' : 'var(--line)',
+                  background: filtro === f.id ? '#2E8F87' : 'var(--card-bg)',
+                  color: filtro === f.id ? '#fff' : 'var(--sub)',
                   fontFamily: 'inherit', fontSize: 12, fontWeight: 600, padding: '7px 14px',
                   borderRadius: 20, cursor: 'pointer',
                 }}
@@ -355,9 +355,9 @@ export default function Appointments() {
           </div>
           <div style={{ padding: '8px 0 4px' }}>
             {carregando ? (
-              <p style={{ color: '#6E807D', fontSize: 13, padding: '20px 18px' }}>Carregando agendamentos…</p>
+              <p style={{ color: 'var(--sub)', fontSize: 13, padding: '20px 18px' }}>Carregando agendamentos…</p>
             ) : listaFiltrada.length === 0 ? (
-              <p style={{ color: '#9BB0AD', fontSize: 13, padding: '20px 18px' }}>
+              <p style={{ color: 'var(--sub)', fontSize: 13, padding: '20px 18px' }}>
                 {filtro === 'todos'
                   ? 'Nenhum agendamento encontrado.'
                   : `Nenhum agendamento com status "${FILTROS.find((f) => f.id === filtro)?.label}".`}
@@ -390,7 +390,7 @@ export default function Appointments() {
                   onClick={() => setPeriodo(p)}
                   style={{
                     border: 'none', background: periodo === p ? '#2E8F87' : 'none',
-                    color: periodo === p ? '#fff' : '#6E807D', fontFamily: 'inherit',
+                    color: periodo === p ? '#fff' : 'var(--sub)', fontFamily: 'inherit',
                     fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 10, cursor: 'pointer',
                   }}
                 >
@@ -401,7 +401,7 @@ export default function Appointments() {
           </div>
 
           {!montado || !referencia || carregando ? (
-            <p style={{ color: '#6E807D', fontSize: 13, padding: '12px 4px' }}>Carregando calendário…</p>
+            <p style={{ color: 'var(--sub)', fontSize: 13, padding: '12px 4px' }}>Carregando calendário…</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${diasPeriodo.length}, 1fr)`, gap: 10 }}>
               {diasPeriodo.map((chave) => {
@@ -412,7 +412,7 @@ export default function Appointments() {
                 const hoje = chave === chaveDia(new Date().toISOString())
                 return (
                   <div key={chave} style={{ minWidth: 0 }}>
-                    <div style={{ textAlign: 'center', marginBottom: 8, padding: '6px 0', borderRadius: 10, background: hoje ? '#227069' : '#F2F7F6', color: hoje ? '#fff' : '#3A5754' }}>
+                    <div style={{ textAlign: 'center', marginBottom: 8, padding: '6px 0', borderRadius: 10, background: hoje ? '#227069' : 'var(--mist)', color: hoje ? '#fff' : 'var(--ink)' }}>
                       <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.04em', opacity: .85 }}>
                         {fmtDiaSemanaCurto.format(d).replace('.', '')}
                       </div>
@@ -421,7 +421,7 @@ export default function Appointments() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minHeight: 60 }}>
-                      {itens.length === 0 && <p style={{ fontSize: 11, color: '#9BB0AD', textAlign: 'center' }}>—</p>}
+                      {itens.length === 0 && <p style={{ fontSize: 11, color: 'var(--sub)', textAlign: 'center' }}>—</p>}
                       {itens.map((a) => (
                         <button
                           key={a.id}

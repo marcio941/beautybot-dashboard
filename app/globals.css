@@ -17,13 +17,27 @@
   --r-lg: 22px;
   --r-md: 16px;
   --shadow: 0 10px 30px rgba(30,70,66,.08);
+
+  --card-bg: #ffffff;
+  --mist: #F2F7F6;
+  --page-bg: linear-gradient(160deg, #F4F6F5 0%, #EAF2F0 60%, #DDEBE8 100%);
+}
+
+:root.dark {
+  --ink: #E8F0EE;
+  --sub: #9FB5B1;
+  --line: #2C4744;
+  --card-bg: #1E2A28;
+  --mist: #16302C;
+  --page-bg: linear-gradient(160deg, #101917 0%, #14201D 60%, #17231F 100%);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
   font-family: 'Poppins', system-ui, sans-serif;
-  background: linear-gradient(160deg, #F4F6F5 0%, #EAF2F0 60%, #DDEBE8 100%);
+  background: var(--page-bg);
   color: var(--ink);
   min-height: 100vh;
 }

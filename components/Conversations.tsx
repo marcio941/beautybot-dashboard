@@ -20,8 +20,8 @@ interface ConversaResumo {
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
-  background: '#fff', borderRadius: 22,
-  boxShadow: '0 10px 30px rgba(30,70,66,.08)', ...style,
+  background: 'var(--card-bg)', borderRadius: 22,
+  boxShadow: 'var(--shadow)', ...style,
 })
 
 const formatarTelefone = (phone: string | null | undefined) => {
@@ -136,7 +136,7 @@ export default function Conversations() {
   return (
     <div>
       <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>💬 Conversas</h2>
-      <p style={{ color: '#6E807D', fontSize: 13, marginBottom: 24 }}>Histórico completo de conversas via WhatsApp.</p>
+      <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 24 }}>Histórico completo de conversas via WhatsApp.</p>
 
       {erroLista && (
         <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 12, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>
@@ -145,10 +145,10 @@ export default function Conversations() {
       )}
 
       {carregandoTela ? (
-        <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando conversas…</p>
+        <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando conversas…</p>
       ) : conversas.length === 0 ? (
         <div style={{ ...card(), padding: '40px 24px', textAlign: 'center' }}>
-          <p style={{ color: '#9BB0AD', fontSize: 14, margin: 0 }}>Nenhuma mensagem registrada ainda.</p>
+          <p style={{ color: 'var(--sub)', fontSize: 14, margin: 0 }}>Nenhuma mensagem registrada ainda.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 200px)', minHeight: 420 }}>
@@ -176,10 +176,10 @@ export default function Conversations() {
                       <b style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {c.nome || formatarTelefone(c.phone)}
                       </b>
-                      <span style={{ fontSize: 10.5, color: '#9BB0AD', flexShrink: 0 }}>{fmtHoraLista(c.ultimaData)}</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--sub)', flexShrink: 0 }}>{fmtHoraLista(c.ultimaData)}</span>
                     </div>
                     <p style={{
-                      fontSize: 12, color: '#6E807D', margin: '2px 0 0', whiteSpace: 'nowrap',
+                      fontSize: 12, color: 'var(--sub)', margin: '2px 0 0', whiteSpace: 'nowrap',
                       overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
                       {c.ultimoTexto}
@@ -192,7 +192,7 @@ export default function Conversations() {
 
           <div style={{ ...card(), flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             {leadSelecionado && (
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #EEF3F2', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
                   width: 40, height: 40, borderRadius: '50%', background: '#E7F2F0', color: '#227069',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0,
@@ -201,18 +201,18 @@ export default function Conversations() {
                 </div>
                 <div>
                   <b style={{ fontSize: 14.5, display: 'block' }}>{leadSelecionado.nome || 'Lead sem nome'}</b>
-                  <span style={{ fontSize: 12, color: '#6E807D' }}>{formatarTelefone(leadSelecionado.phone)}</span>
+                  <span style={{ fontSize: 12, color: 'var(--sub)' }}>{formatarTelefone(leadSelecionado.phone)}</span>
                 </div>
               </div>
             )}
 
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, background: '#F6FAF9', padding: 16 }}>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--mist)', padding: 16 }}>
               {carregandoMensagens ? (
-                <p style={{ color: '#6E807D', fontSize: 13, textAlign: 'center' }}>Carregando mensagens…</p>
+                <p style={{ color: 'var(--sub)', fontSize: 13, textAlign: 'center' }}>Carregando mensagens…</p>
               ) : erroMensagens ? (
                 <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>{erroMensagens}</p>
               ) : mensagens.length === 0 ? (
-                <p style={{ color: '#9BB0AD', fontSize: 13, textAlign: 'center' }}>Nenhuma mensagem registrada ainda.</p>
+                <p style={{ color: 'var(--sub)', fontSize: 13, textAlign: 'center' }}>Nenhuma mensagem registrada ainda.</p>
               ) : (
                 mensagens.map((m) => (
                   <div
@@ -220,8 +220,8 @@ export default function Conversations() {
                     style={{
                       alignSelf: m.remetente === 'cliente' ? 'flex-start' : 'flex-end',
                       maxWidth: '70%',
-                      background: m.remetente === 'cliente' ? '#fff' : '#227069',
-                      color: m.remetente === 'cliente' ? '#213432' : '#fff',
+                      background: m.remetente === 'cliente' ? 'var(--card-bg)' : '#227069',
+                      color: m.remetente === 'cliente' ? 'var(--ink)' : '#fff',
                       borderRadius: m.remetente === 'cliente' ? '14px 14px 14px 4px' : '14px 14px 4px 14px',
                       padding: '9px 13px', fontSize: 13, lineHeight: 1.4,
                       boxShadow: '0 3px 8px rgba(30,70,66,.06)',

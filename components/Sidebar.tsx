@@ -1,7 +1,5 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -23,13 +21,10 @@ interface Props {
 }
 
 export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride }: Props) {
-  const router = useRouter()
   const supabase = createClient()
-  const { userName, accountName, contaId, logoUrl, loading: profileLoading } = useProfile()
-  const displayName = profileLoading ? 'Carregando...' : (userName || 'Usuário')
+  const { accountName, contaId, logoUrl, loading: profileLoading } = useProfile()
   const nomeContaAtual = nomeOverride !== undefined ? nomeOverride : accountName
   const displayAccount = profileLoading ? 'Carregando...' : (nomeContaAtual || 'Sua conta')
-  const avatarInitial = userName ? userName.trim().charAt(0).toUpperCase() : '?'
   const avatarInicialConta = nomeContaAtual ? nomeContaAtual.trim().charAt(0).toUpperCase() : '?'
   const logoParaExibir = logoOverride !== undefined ? logoOverride : logoUrl
 
@@ -108,12 +103,6 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
   }
 
   useEffect(() => pararPolling, [])
-
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   return (
     <aside style={{
@@ -208,40 +197,6 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
           )
         })}
       </nav>
-
-      {/* Bottom */}
-      <div style={{
-        marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 10,
-        padding: '12px 8px 0', borderTop: '1px solid rgba(255,255,255,.2)',
-      }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%', background: '#fff', color: '#227069',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14,
-          overflow: 'hidden', flexShrink: 0,
-        }}>
-          {logoParaExibir ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoParaExibir} alt={displayAccount} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            avatarInitial
-          )}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <b style={{ fontSize: 13, display: 'block' }}>{displayName}</b>
-        </div>
-        <button
-          onClick={handleLogout}
-          title="Sair"
-          style={{
-            border: 'none', background: 'rgba(255,255,255,.16)', color: '#fff',
-            cursor: 'pointer', width: 32, height: 32, borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, flexShrink: 0,
-          }}
-        >
-          <LogOut size={15} />
-        </button>
-      </div>
 
       {qrModalOpen && (
         <div

@@ -25,8 +25,8 @@ interface MensagemRow {
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
-  background: '#fff', borderRadius: 22,
-  boxShadow: '0 10px 30px rgba(30,70,66,.08)', ...style,
+  background: 'var(--card-bg)', borderRadius: 22,
+  boxShadow: 'var(--shadow)', ...style,
 })
 
 const formatarTelefone = (phone: string | null) => {
@@ -127,29 +127,29 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
             </div>
             <div>
               <b style={{ fontSize: 16, display: 'block' }}>{lead.name || 'Sem nome'}</b>
-              <span style={{ fontSize: 12.5, color: '#6E807D' }}>{formatarTelefone(lead.phone)}</span>
+              <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>{formatarTelefone(lead.phone)}</span>
             </div>
           </div>
-          <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#6E807D' }}>✕</button>
+          <button onClick={onFechar} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--sub)' }}>✕</button>
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
           <BadgeOrigem origem={lead.origem} />
-          <span style={{ background: '#F2F7F6', border: '1px solid #DFE9E7', fontSize: 11, fontWeight: 600, color: '#6E807D', borderRadius: 9, padding: '4px 10px' }}>
+          <span style={{ background: 'var(--mist)', border: '1px solid var(--line)', fontSize: 11, fontWeight: 600, color: 'var(--sub)', borderRadius: 9, padding: '4px 10px' }}>
             Criado em {fmtData(lead.created_at)}
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3A5754' }}>Status:</span>
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>Status:</span>
           <select
             value={lead.status ?? ''}
             disabled={atualizando}
             onChange={(e) => onMudarStatus(lead.id, e.target.value)}
             style={{
               fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: '#227069',
-              border: '1.5px solid #DFE9E7', borderRadius: 10, padding: '6px 8px',
-              background: '#fff', cursor: atualizando ? 'wait' : 'pointer', textTransform: 'capitalize',
+              border: '1.5px solid var(--line)', borderRadius: 10, padding: '6px 8px',
+              background: 'var(--card-bg)', cursor: atualizando ? 'wait' : 'pointer', textTransform: 'capitalize',
             }}
           >
             {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -157,7 +157,7 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
         </div>
 
         {temEnriquecimento && (
-          <div style={{ background: '#F9FBFA', border: '1px solid #E3ECE9', borderRadius: 14, padding: '12px 14px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ background: 'var(--mist)', border: '1px solid var(--line)', borderRadius: 14, padding: '12px 14px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {lead.nicho && <p style={{ fontSize: 12.5, margin: 0 }}><b>Nicho:</b> {lead.nicho}</p>}
             {lead.score != null && <p style={{ fontSize: 12.5, margin: 0 }}><b>Score:</b> {lead.score}</p>}
             {lead.score_motivo && <p style={{ fontSize: 12.5, margin: 0 }}><b>Motivo do score:</b> {lead.score_motivo}</p>}
@@ -167,13 +167,13 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
         )}
 
         <div style={{ fontSize: 13, fontWeight: 700, color: '#227069', marginBottom: 8 }}>Histórico de conversa</div>
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, background: '#F6FAF9', borderRadius: 14, padding: 12, minHeight: 120 }}>
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--mist)', borderRadius: 14, padding: 12, minHeight: 120 }}>
           {mensagensCarregando ? (
-            <p style={{ color: '#6E807D', fontSize: 13, textAlign: 'center' }}>Carregando mensagens…</p>
+            <p style={{ color: 'var(--sub)', fontSize: 13, textAlign: 'center' }}>Carregando mensagens…</p>
           ) : mensagensErro ? (
             <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>{mensagensErro}</p>
           ) : mensagens.length === 0 ? (
-            <p style={{ color: '#9BB0AD', fontSize: 13, textAlign: 'center' }}>Nenhuma mensagem registrada ainda.</p>
+            <p style={{ color: 'var(--sub)', fontSize: 13, textAlign: 'center' }}>Nenhuma mensagem registrada ainda.</p>
           ) : (
             mensagens.map((m) => (
               <div
@@ -181,8 +181,8 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
                 style={{
                   alignSelf: m.remetente === 'cliente' ? 'flex-start' : 'flex-end',
                   maxWidth: '78%',
-                  background: m.remetente === 'cliente' ? '#fff' : '#227069',
-                  color: m.remetente === 'cliente' ? '#213432' : '#fff',
+                  background: m.remetente === 'cliente' ? 'var(--card-bg)' : '#227069',
+                  color: m.remetente === 'cliente' ? 'var(--ink)' : '#fff',
                   borderRadius: m.remetente === 'cliente' ? '14px 14px 14px 4px' : '14px 14px 4px 14px',
                   padding: '9px 13px', fontSize: 13, lineHeight: 1.4,
                   boxShadow: '0 3px 8px rgba(30,70,66,.06)',

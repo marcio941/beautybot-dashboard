@@ -31,8 +31,8 @@ interface SugestaoRow {
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
-  background: '#fff', borderRadius: 22,
-  boxShadow: '0 10px 30px rgba(30,70,66,.08)', ...style,
+  background: 'var(--card-bg)', borderRadius: 22,
+  boxShadow: 'var(--shadow)', ...style,
 })
 
 const formatarTelefone = (phone: string | null | undefined) => {
@@ -221,7 +221,7 @@ export default function FollowUps() {
   return (
     <div>
       <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>✨ Sugestões de Follow-up</h2>
-      <p style={{ color: '#6E807D', fontSize: 13, marginBottom: 24 }}>
+      <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 24 }}>
         Leads que finalizaram um atendimento há pelo menos 3 dias e ainda não receberam um follow-up.
       </p>
 
@@ -232,10 +232,10 @@ export default function FollowUps() {
       )}
 
       {carregandoSugestoesTela ? (
-        <p style={{ color: '#6E807D', fontSize: 13, marginBottom: 32 }}>Carregando sugestões…</p>
+        <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 32 }}>Carregando sugestões…</p>
       ) : sugestoesVisiveis.length === 0 ? (
         <div style={{ ...card(), padding: '40px 24px', textAlign: 'center', marginBottom: 32 }}>
-          <p style={{ color: '#9BB0AD', fontSize: 14, margin: 0 }}>Nenhum follow-up pendente no momento.</p>
+          <p style={{ color: 'var(--sub)', fontSize: 14, margin: 0 }}>Nenhum follow-up pendente no momento.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
@@ -253,9 +253,9 @@ export default function FollowUps() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                       <b style={{ fontSize: 13.5 }}>{s.leadName || 'Lead sem nome'}</b>
-                      <span style={{ fontSize: 11.5, color: '#6E807D' }}>{formatarTelefone(s.leadPhone)}</span>
+                      <span style={{ fontSize: 11.5, color: 'var(--sub)' }}>{formatarTelefone(s.leadPhone)}</span>
                     </div>
-                    <p style={{ fontSize: 12.5, color: '#6E807D', margin: 0 }}>
+                    <p style={{ fontSize: 12.5, color: 'var(--sub)', margin: 0 }}>
                       Fez {s.servicoNome || 'um atendimento'} há {s.diasAtras} {s.diasAtras === 1 ? 'dia' : 'dias'}
                     </p>
                   </div>
@@ -267,8 +267,9 @@ export default function FollowUps() {
                   rows={3}
                   disabled={enviando}
                   style={{
-                    width: '100%', boxSizing: 'border-box', borderRadius: 12, border: '1px solid #DFE9E7',
-                    padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', color: '#3A5754', resize: 'vertical', marginBottom: 10,
+                    width: '100%', boxSizing: 'border-box', borderRadius: 12, border: '1px solid var(--line)',
+                    padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', color: 'var(--ink)',
+                    background: 'var(--card-bg)', resize: 'vertical', marginBottom: 10,
                   }}
                 />
 
@@ -283,7 +284,7 @@ export default function FollowUps() {
                     onClick={() => ignorarSugestao(s.appointmentId)}
                     disabled={enviando}
                     style={{
-                      background: '#F2F7F6', color: '#6E807D', border: '1px solid #DFE9E7', borderRadius: 10,
+                      background: 'var(--mist)', color: 'var(--sub)', border: '1px solid var(--line)', borderRadius: 10,
                       padding: '8px 16px', fontSize: 12.5, fontWeight: 600, cursor: enviando ? 'not-allowed' : 'pointer',
                     }}
                   >
@@ -308,7 +309,7 @@ export default function FollowUps() {
       )}
 
       <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>🔁 Follow-ups</h2>
-      <p style={{ color: '#6E807D', fontSize: 13, marginBottom: 24 }}>
+      <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 24 }}>
         Histórico de follow-ups já enviados para os leads.
       </p>
 
@@ -319,10 +320,10 @@ export default function FollowUps() {
       )}
 
       {carregandoTela ? (
-        <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando follow-ups…</p>
+        <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando follow-ups…</p>
       ) : followUps.length === 0 ? (
         <div style={{ ...card(), padding: '40px 24px', textAlign: 'center' }}>
-          <p style={{ color: '#9BB0AD', fontSize: 14, margin: 0 }}>Nenhum follow-up enviado ainda.</p>
+          <p style={{ color: 'var(--sub)', fontSize: 14, margin: 0 }}>Nenhum follow-up enviado ainda.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -337,14 +338,14 @@ export default function FollowUps() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                   <b style={{ fontSize: 13.5 }}>{f.leads?.name || 'Lead sem nome'}</b>
-                  <span style={{ fontSize: 11.5, color: '#6E807D' }}>{formatarTelefone(f.leads?.phone)}</span>
-                  <span style={{ background: '#F2F7F6', border: '1px solid #DFE9E7', fontSize: 10.5, fontWeight: 600, color: '#6E807D', borderRadius: 8, padding: '2px 8px', textTransform: 'capitalize' }}>
+                  <span style={{ fontSize: 11.5, color: 'var(--sub)' }}>{formatarTelefone(f.leads?.phone)}</span>
+                  <span style={{ background: 'var(--mist)', border: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--sub)', borderRadius: 8, padding: '2px 8px', textTransform: 'capitalize' }}>
                     {f.canal || 'chat'}
                   </span>
                 </div>
-                <p style={{ fontSize: 13, color: '#3A5754', margin: 0, lineHeight: 1.45 }}>{f.mensagem || '—'}</p>
+                <p style={{ fontSize: 13, color: 'var(--ink)', margin: 0, lineHeight: 1.45 }}>{f.mensagem || '—'}</p>
               </div>
-              <span style={{ fontSize: 11.5, color: '#9BB0AD', whiteSpace: 'nowrap', flexShrink: 0 }}>{fmtDataHora(f.enviado_em)}</span>
+              <span style={{ fontSize: 11.5, color: 'var(--sub)', whiteSpace: 'nowrap', flexShrink: 0 }}>{fmtDataHora(f.enviado_em)}</span>
             </div>
           ))}
         </div>

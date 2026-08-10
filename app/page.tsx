@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Sidebar from '@/components/Sidebar'
+import Header from '@/components/Header'
 import Dashboard from '@/components/Dashboard'
 import Appointments from '@/components/Appointments'
 import Conversations from '@/components/Conversations'
@@ -32,9 +33,12 @@ export default function Home() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar active={view} onNavigate={setView} logoOverride={logoOverride} nomeOverride={nomeOverride} />
-      <main style={{ flex: 1, padding: '28px 30px', minWidth: 0 }}>
-        {renderView()}
-      </main>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <Header logoOverride={logoOverride} />
+        <main style={{ flex: 1, padding: '28px 30px' }}>
+          {renderView()}
+        </main>
+      </div>
     </div>
   )
 }

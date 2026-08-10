@@ -59,7 +59,7 @@ const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   'em atendimento': { bg: '#E7F2F0', color: '#227069' },
 }
 const getStatusStyle = (s: string) =>
-  STATUS_STYLE[s] ?? { bg: '#F2F7F6', color: '#6E807D' }
+  STATUS_STYLE[s] ?? { bg: 'var(--mist)', color: 'var(--sub)' }
 
 const statusLabel: Record<string, string> = {
   scheduled: 'Agendado', confirmed: 'Confirmado', pending: 'Pendente',
@@ -68,8 +68,8 @@ const statusLabel: Record<string, string> = {
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
-  background: '#fff', borderRadius: 22,
-  boxShadow: '0 10px 30px rgba(30,70,66,.08)', ...style,
+  background: 'var(--card-bg)', borderRadius: 22,
+  boxShadow: 'var(--shadow)', ...style,
 })
 
 const fmtHora = (iso: string) => {
@@ -92,7 +92,7 @@ const HEATMAP_DATA = [
 ]
 const DIAS  = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom']
 const HORAS = ['8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h','21h']
-const HEAT_COLORS = ['#F2F7F6','#CFE7E3','#9CCFC8','#5FB2A8','#227069']
+const HEAT_COLORS = ['var(--mist)','#CFE7E3','#9CCFC8','#5FB2A8','#227069']
 
 /* ═══════════════════════════════════════════════ */
 export default function Dashboard() {
@@ -249,7 +249,7 @@ export default function Dashboard() {
               {profileLoading ? 'Carregando...' : (userName || 'Usuário')}
             </span>
           </h2>
-          <p style={{ fontSize:13, color:'#6E807D' }}>
+          <p style={{ fontSize:13, color:'var(--sub)' }}>
             {new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
             {!profileLoading && ` · ${accountName || 'Sua conta'}`}
           </p>
@@ -263,7 +263,7 @@ export default function Dashboard() {
             {[['today','Hoje'],['7d','7 dias'],['30d','30 dias']].map(([v,l])=>(
               <button key={v} onClick={()=>setPeriod(v)} style={{
                 border:'none', background: period===v ? '#2E8F87' : 'none',
-                color: period===v ? '#fff' : '#6E807D', fontFamily:'inherit',
+                color: period===v ? '#fff' : 'var(--sub)', fontFamily:'inherit',
                 fontSize:12, fontWeight:600, padding:'7px 14px', borderRadius:10, cursor:'pointer',
                 boxShadow: period===v ? '0 4px 10px rgba(46,143,135,.3)' : 'none',
               }}>{l}</button>
@@ -286,7 +286,7 @@ export default function Dashboard() {
               <k.Icon size={18} color="#227069" />
             </div>
             <b style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:25 }}>{k.v}</b>
-            <span style={{ display:'block', fontSize:12, color:'#6E807D', marginTop:2 }}>{k.label}</span>
+            <span style={{ display:'block', fontSize:12, color:'var(--sub)', marginTop:2 }}>{k.label}</span>
           </div>
         ))}
       </div>
@@ -299,13 +299,13 @@ export default function Dashboard() {
           <div style={{ padding:'18px 20px 12px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div>
               <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:17, color:'#227069' }}>Fila de hoje</h3>
-              <span style={{ fontSize:11.5, color:'#6E807D' }}>{apptToday.length} agendamento{apptToday.length!==1?'s':''}</span>
+              <span style={{ fontSize:11.5, color:'var(--sub)' }}>{apptToday.length} agendamento{apptToday.length!==1?'s':''}</span>
             </div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:10, padding:'0 14px 16px', maxHeight:480, overflowY:'auto' }}>
-            {loading && <p style={{ color:'#6E807D', fontSize:13, padding:8 }}>Carregando…</p>}
+            {loading && <p style={{ color:'var(--sub)', fontSize:13, padding:8 }}>Carregando…</p>}
             {!loading && apptToday.length === 0 && (
-              <p style={{ color:'#6E807D', fontSize:13, padding:8 }}>Nenhum agendamento hoje.</p>
+              <p style={{ color:'var(--sub)', fontSize:13, padding:8 }}>Nenhum agendamento hoje.</p>
             )}
             {apptToday.map((a,i) => {
               const cor = STATUS_COR[a.status] ?? '#9B6CF0'
@@ -313,9 +313,9 @@ export default function Dashboard() {
               return (
                 <div key={a.id} onClick={()=>setSelIdx(i)} style={{
                   display:'flex', alignItems:'center', gap:12,
-                  background: selIdx===i ? '#fff' : '#F2F7F6',
+                  background: selIdx===i ? 'var(--card-bg)' : 'var(--mist)',
                   borderLeft: `5px solid ${cor}`, borderRadius:14, padding:'11px 12px',
-                  cursor:'pointer', border:`1px solid #DFE9E7`, borderLeftColor:cor, borderLeftWidth:5,
+                  cursor:'pointer', border:`1px solid var(--line)`, borderLeftColor:cor, borderLeftWidth:5,
                   boxShadow: selIdx===i ? '0 8px 20px rgba(30,70,66,.14)' : 'none', transition:'all .12s',
                 }}>
                   <div style={{ width:40, height:40, borderRadius:'50%', background:'#E7F2F0', color:'#227069', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:15, flexShrink:0 }}>
@@ -323,7 +323,7 @@ export default function Dashboard() {
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <b style={{ fontSize:13.5, display:'block' }}>{a.name || 'Cliente'}</b>
-                    <small style={{ fontSize:11.5, color:'#6E807D' }}>{a.notes || '—'}</small>
+                    <small style={{ fontSize:11.5, color:'var(--sub)' }}>{a.notes || '—'}</small>
                   </div>
                   <div style={{ textAlign:'right', flexShrink:0 }}>
                     <b style={{ fontSize:13, color:'#227069', display:'block' }}>{fmtHora(a.appointment_date)}</b>
@@ -349,7 +349,7 @@ export default function Dashboard() {
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <b style={{ fontSize:13.5, display:'block' }}>{c.telefone.replace('@s.whatsapp.net','').replace('55','').replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3')}</b>
-                      <small style={{ fontSize:11.5, color:'#6E807D' }}>{c.resumo_provisorio || c.mensagem_original?.slice(0,40) || '—'}</small>
+                      <small style={{ fontSize:11.5, color:'var(--sub)' }}>{c.resumo_provisorio || c.mensagem_original?.slice(0,40) || '—'}</small>
                     </div>
                     <span style={{ background:'#EDE4FC', color:'#6A3BC0', fontSize:10, fontWeight:700, borderRadius:8, padding:'2px 8px', flexShrink:0 }}>IA ativa</span>
                   </div>
@@ -363,17 +363,17 @@ export default function Dashboard() {
         <section style={{ ...card(), display:'flex', flexDirection:'column', overflow:'hidden' }}>
           {selLead ? (
             <>
-              <div style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 20px', borderBottom:'1px solid #DFE9E7', background:'linear-gradient(180deg,#fff,#FAFCFB)', flexWrap:'wrap' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 20px', borderBottom:'1px solid var(--line)', background:'var(--card-bg)', flexWrap:'wrap' }}>
                 <div style={{ width:46, height:46, borderRadius:'50%', background:'#E7F2F0', color:'#227069', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:17, flexShrink:0 }}>
                   {(selLead.name || '?')[0].toUpperCase()}
                 </div>
                 <div>
                   <b style={{ fontSize:16 }}>{selLead.name}</b>
-                  <div style={{ fontSize:12, color:'#6E807D' }}>{selLead.phone?.replace('@s.whatsapp.net','')}</div>
+                  <div style={{ fontSize:12, color:'var(--sub)' }}>{selLead.phone?.replace('@s.whatsapp.net','')}</div>
                 </div>
                 <div style={{ display:'flex', gap:8, marginLeft:14, flexWrap:'wrap' }}>
-                  <span style={{ background:'#F2F7F6', border:'1px solid #DFE9E7', fontSize:11, fontWeight:600, color:'#6E807D', borderRadius:9, padding:'4px 10px' }}>{statusLabel[selLead.status] ?? selLead.status}</span>
-                  <span style={{ background:'#F2F7F6', border:'1px solid #DFE9E7', fontSize:11, fontWeight:600, color:'#6E807D', borderRadius:9, padding:'4px 10px' }}>
+                  <span style={{ background:'var(--mist)', border:'1px solid var(--line)', fontSize:11, fontWeight:600, color:'var(--sub)', borderRadius:9, padding:'4px 10px' }}>{statusLabel[selLead.status] ?? selLead.status}</span>
+                  <span style={{ background:'var(--mist)', border:'1px solid var(--line)', fontSize:11, fontWeight:600, color:'var(--sub)', borderRadius:9, padding:'4px 10px' }}>
                     {new Date(selLead.created_at).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
@@ -381,10 +381,10 @@ export default function Dashboard() {
                   ✦ Ficha do lead
                 </button>
               </div>
-              <div style={{ flex:1, padding:22, display:'flex', flexDirection:'column', gap:12, background:'linear-gradient(180deg,#F6FAF9,#EDF4F2)', overflowY:'auto', minHeight:280 }}>
-                <div style={{ alignSelf:'center', fontSize:11, fontWeight:600, color:'#6E807D', background:'#fff', borderRadius:10, padding:'3px 12px', boxShadow:'0 2px 6px rgba(30,70,66,.06)' }}>Informações do lead</div>
+              <div style={{ flex:1, padding:22, display:'flex', flexDirection:'column', gap:12, background:'var(--mist)', overflowY:'auto', minHeight:280 }}>
+                <div style={{ alignSelf:'center', fontSize:11, fontWeight:600, color:'var(--sub)', background:'var(--card-bg)', borderRadius:10, padding:'3px 12px', boxShadow:'0 2px 6px rgba(30,70,66,.06)' }}>Informações do lead</div>
                 {selLead.notes && (
-                  <div style={{ maxWidth:'72%', background:'#fff', alignSelf:'flex-start', borderRadius:'16px 16px 16px 5px', padding:'11px 15px', fontSize:13.5, lineHeight:1.45, boxShadow:'0 3px 8px rgba(30,70,66,.06)' }}>
+                  <div style={{ maxWidth:'72%', background:'var(--card-bg)', color:'var(--ink)', alignSelf:'flex-start', borderRadius:'16px 16px 16px 5px', padding:'11px 15px', fontSize:13.5, lineHeight:1.45, boxShadow:'0 3px 8px rgba(30,70,66,.06)' }}>
                     📝 {selLead.notes}
                   </div>
                 )}
@@ -395,19 +395,19 @@ export default function Dashboard() {
                   </div>
                 ))}
                 {!selLead.notes && appointments.filter(a=>a.lead_id===selLead.id).length===0 && !mensagensCarregando && mensagensSelLead.length===0 && (
-                  <p style={{ color:'#9BB0AD', fontSize:13, textAlign:'center', marginTop:40 }}>Nenhuma nota ou agendamento para este lead.</p>
+                  <p style={{ color:'var(--sub)', fontSize:13, textAlign:'center', marginTop:40 }}>Nenhuma nota ou agendamento para este lead.</p>
                 )}
                 {mensagensCarregando ? (
-                  <p style={{ color:'#6E807D', fontSize:12.5, textAlign:'center' }}>Carregando conversa…</p>
+                  <p style={{ color:'var(--sub)', fontSize:12.5, textAlign:'center' }}>Carregando conversa…</p>
                 ) : (
                   mensagensSelLead.map((m) => (
                     <div key={m.id} style={{ alignSelf: m.remetente === 'cliente' ? 'flex-start' : 'flex-end', maxWidth:'72%', display:'flex', flexDirection:'column', gap:2 }}>
                       {m.remetente !== 'cliente' && (
-                        <span style={{ fontSize:10, fontWeight:600, color:'#9BB0AD', textAlign:'right', paddingRight:4 }}>{m.remetente === 'bot' ? 'IA' : 'Você'}</span>
+                        <span style={{ fontSize:10, fontWeight:600, color:'var(--sub)', textAlign:'right', paddingRight:4 }}>{m.remetente === 'bot' ? 'IA' : 'Você'}</span>
                       )}
                       <div style={{
-                        background: m.remetente === 'cliente' ? '#fff' : m.remetente === 'bot' ? '#227069' : '#2E8F87',
-                        color: m.remetente === 'cliente' ? '#213432' : '#fff',
+                        background: m.remetente === 'cliente' ? 'var(--card-bg)' : m.remetente === 'bot' ? '#227069' : '#2E8F87',
+                        color: m.remetente === 'cliente' ? 'var(--ink)' : '#fff',
                         borderRadius: m.remetente === 'cliente' ? '16px 16px 16px 5px' : '16px 16px 5px 16px',
                         padding:'11px 15px', fontSize:13.5, lineHeight:1.45, boxShadow:'0 3px 8px rgba(30,70,66,.06)',
                       }}>
@@ -417,14 +417,14 @@ export default function Dashboard() {
                   ))
                 )}
               </div>
-              <div style={{ display:'flex', gap:10, alignItems:'center', padding:'14px 18px', borderTop:'1px solid #DFE9E7', background:'#fff' }}>
+              <div style={{ display:'flex', gap:10, alignItems:'center', padding:'14px 18px', borderTop:'1px solid var(--line)', background:'var(--card-bg)' }}>
                 <button
                   onClick={() => toggleAtendimentoHumano(selLead)}
                   disabled={togglingIAId === selLead.id}
                   title={selLead.atendimento_humano ? 'Atendimento humano — clique para devolver à IA' : 'IA respondendo automaticamente — clique para assumir'}
-                  style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, fontWeight:600, color:'#6E807D', border:'none', background:'none', padding:0, fontFamily:'inherit', cursor: togglingIAId === selLead.id ? 'wait' : 'pointer' }}
+                  style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, fontWeight:600, color:'var(--sub)', border:'none', background:'none', padding:0, fontFamily:'inherit', cursor: togglingIAId === selLead.id ? 'wait' : 'pointer' }}
                 >
-                  <div style={{ width:38, height:22, background: selLead.atendimento_humano ? '#DFE9E7' : '#9B6CF0', borderRadius:20, position:'relative', transition:'background .15s' }}>
+                  <div style={{ width:38, height:22, background: selLead.atendimento_humano ? 'var(--line)' : '#9B6CF0', borderRadius:20, position:'relative', transition:'background .15s' }}>
                     <span style={{ position:'absolute', top:3, left: selLead.atendimento_humano ? 3 : 19, width:16, height:16, background:'#fff', borderRadius:'50%', display:'block', transition:'left .15s' }}/>
                   </div>
                   IA
@@ -436,12 +436,12 @@ export default function Dashboard() {
                   onChange={(e) => setMensagemTexto(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensagem() } }}
                   disabled={enviandoMensagem}
-                  style={{ flex:1, border:'1.5px solid #DFE9E7', borderRadius:14, padding:'12px 16px', fontFamily:'inherit', fontSize:13.5, outline:'none', background:'#F2F7F6' }}
+                  style={{ flex:1, border:'1.5px solid var(--line)', borderRadius:14, padding:'12px 16px', fontFamily:'inherit', fontSize:13.5, outline:'none', background:'var(--mist)' }}
                 />
                 <button
                   onClick={enviarMensagem}
                   disabled={enviandoMensagem || !mensagemTexto.trim()}
-                  style={{ border:'none', width:44, height:44, borderRadius:14, background: enviandoMensagem || !mensagemTexto.trim() ? '#9BB0AD' : '#2E8F87', color:'#fff', fontSize:17, boxShadow:'0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer' }}
+                  style={{ border:'none', width:44, height:44, borderRadius:14, background: enviandoMensagem || !mensagemTexto.trim() ? 'var(--sub)' : '#2E8F87', color:'#fff', fontSize:17, boxShadow:'0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer' }}
                 >
                   {enviandoMensagem ? '…' : '➤'}
                 </button>
@@ -451,7 +451,7 @@ export default function Dashboard() {
               )}
             </>
           ) : (
-            <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#9BB0AD', fontSize:14 }}>
+            <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--sub)', fontSize:14 }}>
               Selecione um lead na fila para ver os detalhes.
             </div>
           )}
@@ -465,7 +465,7 @@ export default function Dashboard() {
         {/* Barras */}
         <section style={{ ...card(), padding:'20px 22px' }}>
           <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:16, color:'#227069' }}>Leads por status</h3>
-          <p style={{ fontSize:11.5, color:'#6E807D', marginBottom:16 }}>Distribuição atual dos leads no CRM</p>
+          <p style={{ fontSize:11.5, color:'var(--sub)', marginBottom:16 }}>Distribuição atual dos leads no CRM</p>
           <div style={{ display:'flex', alignItems:'flex-end', gap:14, height:180, paddingTop:8 }}>
             {[
               ['Novos',      leads.filter(l=>l.status==='novo').length,           '#9B6CF0'],
@@ -480,7 +480,7 @@ export default function Dashboard() {
                 <div key={label as string} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:8, height:'100%', justifyContent:'flex-end' }}>
                   <span style={{ fontSize:11, fontWeight:700, color: cor as string }}>{val}</span>
                   <div style={{ width:'100%', maxWidth:44, borderRadius:'9px 9px 4px 4px', background: cor as string, height:`${pct}%`, opacity:.85 }} />
-                  <span style={{ fontSize:10, color:'#6E807D', fontWeight:600, textAlign:'center' }}>{label}</span>
+                  <span style={{ fontSize:10, color:'var(--sub)', fontWeight:600, textAlign:'center' }}>{label}</span>
                 </div>
               )
             })}
@@ -490,16 +490,16 @@ export default function Dashboard() {
         {/* Heatmap */}
         <section style={{ ...card(), padding:'20px 22px' }}>
           <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:16, color:'#227069' }}>Horários de pico</h3>
-          <p style={{ fontSize:11.5, color:'#6E807D', marginBottom:16 }}>Mensagens por horário (referência)</p>
+          <p style={{ fontSize:11.5, color:'var(--sub)', marginBottom:16 }}>Mensagens por horário (referência)</p>
           <div style={{ display:'grid', gridTemplateColumns:'34px repeat(14,1fr)', gap:4, alignItems:'center' }}>
             {HEATMAP_DATA.map((row,di)=>([
-              <span key={`d${di}`} style={{ fontSize:10.5, color:'#6E807D', fontWeight:600 }}>{DIAS[di]}</span>,
+              <span key={`d${di}`} style={{ fontSize:10.5, color:'var(--sub)', fontWeight:600 }}>{DIAS[di]}</span>,
               ...row.map((v,hi)=>(
                 <div key={`${di}-${hi}`} style={{ aspectRatio:'1', borderRadius:5, background: HEAT_COLORS[v] }} />
               ))
             ]))}
             <span/>
-            {HORAS.map(h=><span key={h} style={{ fontSize:9.5, color:'#6E807D', textAlign:'center' }}>{h}</span>)}
+            {HORAS.map(h=><span key={h} style={{ fontSize:9.5, color:'var(--sub)', textAlign:'center' }}>{h}</span>)}
           </div>
         </section>
       </div>
@@ -508,7 +508,7 @@ export default function Dashboard() {
         {/* Funil real */}
         <section style={{ ...card(), padding:'20px 22px' }}>
           <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:16, color:'#227069' }}>Funil de leads</h3>
-          <p style={{ fontSize:11.5, color:'#6E807D', marginBottom:16 }}>Do lead novo ao atendimento</p>
+          <p style={{ fontSize:11.5, color:'var(--sub)', marginBottom:16 }}>Do lead novo ao atendimento</p>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {[
               ['Total de leads', totalLeads, totalLeads, '#2E8F87'],
@@ -520,10 +520,10 @@ export default function Dashboard() {
               return (
                 <div key={label as string} style={{ display:'flex', alignItems:'center', gap:12 }}>
                   <span style={{ width:106, fontSize:12, fontWeight:600 }}>{label}</span>
-                  <div style={{ flex:1, background:'#F2F7F6', borderRadius:10, height:30, overflow:'hidden' }}>
+                  <div style={{ flex:1, background:'var(--mist)', borderRadius:10, height:30, overflow:'hidden' }}>
                     <div style={{ height:'100%', borderRadius:10, background: c as string, width:`${Math.max(pct,4)}%`, display:'flex', alignItems:'center', padding:'0 12px', color:'#fff', fontSize:12, fontWeight:700, minWidth:36 }}>{val}</div>
                   </div>
-                  <span style={{ width:40, fontSize:12, fontWeight:700, color:'#6E807D', textAlign:'right' }}>{pct}%</span>
+                  <span style={{ width:40, fontSize:12, fontWeight:700, color:'var(--sub)', textAlign:'right' }}>{pct}%</span>
                 </div>
               )
             })}
@@ -533,9 +533,9 @@ export default function Dashboard() {
         {/* Conversas pendentes */}
         <section style={{ ...card(), padding:'20px 22px' }}>
           <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:16, color:'#227069' }}>Conversas pendentes</h3>
-          <p style={{ fontSize:11.5, color:'#6E807D', marginBottom:16 }}>Estado atual das conversas abertas</p>
+          <p style={{ fontSize:11.5, color:'var(--sub)', marginBottom:16 }}>Estado atual das conversas abertas</p>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {loading ? <p style={{ color:'#9BB0AD', fontSize:13 }}>Carregando…</p> :
+            {loading ? <p style={{ color:'var(--sub)', fontSize:13 }}>Carregando…</p> :
             conversas.slice(0,5).map(c=>(
               <div key={c.telefone} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:'#F5F0FE', borderRadius:12, border:'1px solid #E8DEF8' }}>
                 <div style={{ width:32, height:32, borderRadius:'50%', background:'#EDE4FC', color:'#6A3BC0', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>
@@ -543,20 +543,20 @@ export default function Dashboard() {
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <b style={{ fontSize:12, display:'block' }}>{c.telefone.replace('@s.whatsapp.net','').replace('55','').replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3')}</b>
-                  <small style={{ fontSize:11, color:'#6E807D', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block' }}>{c.categoria_provisoria || c.resumo_provisorio || c.estado}</small>
+                  <small style={{ fontSize:11, color:'var(--sub)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block' }}>{c.categoria_provisoria || c.resumo_provisorio || c.estado}</small>
                 </div>
               </div>
             ))}
-            {!loading && conversas.length === 0 && <p style={{ color:'#9BB0AD', fontSize:13 }}>Nenhuma conversa pendente.</p>}
+            {!loading && conversas.length === 0 && <p style={{ color:'var(--sub)', fontSize:13 }}>Nenhuma conversa pendente.</p>}
           </div>
         </section>
 
         {/* Leads recentes */}
         <section style={{ ...card(), padding:'20px 22px' }}>
           <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:16, color:'#227069' }}>Leads recentes</h3>
-          <p style={{ fontSize:11.5, color:'#6E807D', marginBottom:16 }}>Últimos leads cadastrados</p>
+          <p style={{ fontSize:11.5, color:'var(--sub)', marginBottom:16 }}>Últimos leads cadastrados</p>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {loading ? <p style={{ color:'#9BB0AD', fontSize:13 }}>Carregando…</p> :
+            {loading ? <p style={{ color:'var(--sub)', fontSize:13 }}>Carregando…</p> :
             leads.slice(0,5).map(l=>{
               const ss = getStatusStyle(l.status)
               return (
@@ -566,7 +566,7 @@ export default function Dashboard() {
                   </div>
                   <div style={{ flex:1 }}>
                     <b style={{ fontSize:13, display:'block' }}>{l.name || 'Sem nome'}</b>
-                    <div style={{ height:5, borderRadius:4, background:'#F2F7F6', marginTop:4 }}>
+                    <div style={{ height:5, borderRadius:4, background:'var(--mist)', marginTop:4 }}>
                       <div style={{ height:'100%', borderRadius:4, background:'#2E8F87', width: l.status==='em atendimento'?'60%':l.status==='novo'?'20%':'90%' }}/>
                     </div>
                   </div>
@@ -574,7 +574,7 @@ export default function Dashboard() {
                 </div>
               )
             })}
-            {!loading && leads.length === 0 && <p style={{ color:'#9BB0AD', fontSize:13 }}>Nenhum lead encontrado.</p>}
+            {!loading && leads.length === 0 && <p style={{ color:'var(--sub)', fontSize:13 }}>Nenhum lead encontrado.</p>}
           </div>
         </section>
       </div>

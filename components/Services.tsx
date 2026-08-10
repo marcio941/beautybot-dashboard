@@ -14,8 +14,8 @@ interface ServicoRow {
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
-  background: '#fff', borderRadius: 22,
-  boxShadow: '0 10px 30px rgba(30,70,66,.08)', ...style,
+  background: 'var(--card-bg)', borderRadius: 22,
+  boxShadow: 'var(--shadow)', ...style,
 })
 
 const fmtPreco = (preco: number | null) => {
@@ -150,7 +150,7 @@ export default function Services() {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>✨ Serviços</h2>
-          <p style={{ color: '#6E807D', fontSize: 13 }}>Catálogo de procedimentos oferecidos pela conta.</p>
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Catálogo de procedimentos oferecidos pela conta.</p>
         </div>
         <button
           onClick={abrirNovo}
@@ -173,10 +173,10 @@ export default function Services() {
       )}
 
       {carregandoTela ? (
-        <p style={{ color: '#6E807D', fontSize: 13 }}>Carregando serviços…</p>
+        <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando serviços…</p>
       ) : servicos.length === 0 ? (
         <div style={{ ...card(), padding: '40px 24px', textAlign: 'center' }}>
-          <p style={{ color: '#9BB0AD', fontSize: 14, margin: 0 }}>Nenhum serviço cadastrado ainda.</p>
+          <p style={{ color: 'var(--sub)', fontSize: 14, margin: 0 }}>Nenhum serviço cadastrado ainda.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -186,19 +186,19 @@ export default function Services() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <b style={{ fontSize: 14.5 }}>{s.nome}</b>
                   <span style={{
-                    background: s.ativo ? '#DFF7E9' : '#F2F7F6',
-                    color: s.ativo ? '#1E7C46' : '#6E807D',
+                    background: s.ativo ? '#DFF7E9' : 'var(--mist)',
+                    color: s.ativo ? '#1E7C46' : 'var(--sub)',
                     fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '2px 9px',
                   }}>
                     {s.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
-                <span style={{ fontSize: 12.5, color: '#6E807D' }}>{s.duracao_min} min · {fmtPreco(s.preco)}</span>
+                <span style={{ fontSize: 12.5, color: 'var(--sub)' }}>{s.duracao_min} min · {fmtPreco(s.preco)}</span>
               </div>
               <button
                 onClick={() => abrirEditar(s)}
                 style={{
-                  border: '1.5px solid #DFE9E7', background: '#fff', color: '#227069',
+                  border: '1.5px solid var(--line)', background: 'var(--card-bg)', color: '#227069',
                   fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, padding: '8px 14px',
                   borderRadius: 10, cursor: 'pointer', flexShrink: 0,
                 }}
@@ -237,7 +237,7 @@ export default function Services() {
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#3A5754' }}>
+              <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>
                 Nome
                 <input
                   type="text"
@@ -245,12 +245,13 @@ export default function Services() {
                   onChange={(e) => setFormNome(e.target.value)}
                   placeholder="Ex: Limpeza de pele"
                   style={{
-                    display: 'block', width: '100%', marginTop: 6, border: '1.5px solid #DFE9E7',
+                    display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
                     borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
+                    background: 'var(--card-bg)', color: 'var(--ink)',
                   }}
                 />
               </label>
-              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#3A5754' }}>
+              <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>
                 Duração (minutos)
                 <input
                   type="number"
@@ -259,12 +260,13 @@ export default function Services() {
                   onChange={(e) => setFormDuracao(e.target.value)}
                   placeholder="Ex: 60"
                   style={{
-                    display: 'block', width: '100%', marginTop: 6, border: '1.5px solid #DFE9E7',
+                    display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
                     borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
+                    background: 'var(--card-bg)', color: 'var(--ink)',
                   }}
                 />
               </label>
-              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#3A5754' }}>
+              <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>
                 Preço (R$)
                 <input
                   type="text"
@@ -273,8 +275,9 @@ export default function Services() {
                   onChange={(e) => setFormPreco(e.target.value)}
                   placeholder="Ex: 120,00"
                   style={{
-                    display: 'block', width: '100%', marginTop: 6, border: '1.5px solid #DFE9E7',
+                    display: 'block', width: '100%', marginTop: 6, border: '1.5px solid var(--line)',
                     borderRadius: 10, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13.5, outline: 'none',
+                    background: 'var(--card-bg)', color: 'var(--ink)',
                   }}
                 />
               </label>
@@ -291,7 +294,7 @@ export default function Services() {
                 onClick={fecharModal}
                 disabled={salvando}
                 style={{
-                  flex: 1, border: 'none', background: '#F2F7F6', color: '#6E807D',
+                  flex: 1, border: 'none', background: 'var(--mist)', color: 'var(--sub)',
                   fontFamily: 'inherit', fontSize: 13, fontWeight: 600, padding: '11px 0',
                   borderRadius: 10, cursor: 'pointer',
                 }}
