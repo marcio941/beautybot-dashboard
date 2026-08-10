@@ -95,7 +95,7 @@ const HORAS = ['8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','
 const HEAT_COLORS = ['var(--mist)','#CFE7E3','#9CCFC8','#5FB2A8','#227069']
 
 /* ═══════════════════════════════════════════════ */
-export default function Dashboard() {
+export default function Dashboard({ onVerConversaCompleta }: { onVerConversaCompleta?: (leadId: string) => void } = {}) {
   const { userName, accountName, categoriasKanban, loading: profileLoading } = useProfile()
   const [period, setPeriod]           = useState('7d')
   const [selIdx, setSelIdx]           = useState(0)
@@ -107,6 +107,7 @@ export default function Dashboard() {
   const [atualizandoLeadId, setAtualizandoLeadId] = useState<string | null>(null)
   const [togglingIAId, setTogglingIAId] = useState<string | null>(null)
   const [mensagensSelLead, setMensagensSelLead] = useState<MensagemRow[]>([])
+  const [totalMensagensSelLead, setTotalMensagensSelLead] = useState(0)
   const [mensagensCarregando, setMensagensCarregando] = useState(false)
   const [mensagemTexto, setMensagemTexto] = useState('')
   const [enviandoMensagem, setEnviandoMensagem] = useState(false)
@@ -162,21 +163,32 @@ export default function Dashboard() {
   const selLead = leads[selIdx]
 
   useEffect(() => {
-    if (!selLead) { setMensagensSelLead([]); return }
+    if (!selLead) { setMensagensSelLead([]); setTotalMensagensSelLead(0); return }
     let ativo = true
     async function carregarMensagens() {
       setMensagensCarregando(true)
       try {
-        const { data, error } = await supabase
-          .from('mensagens')
-          .select('id, remetente, texto, created_at')
-          .eq('lead_id', selLead!.id)
-          .order('created_at', { ascending: true })
+        const [{ data, error }, { count, error: erroContagem }] = await Promise.all([
+          supabase
+            .from('mensagens')
+            .select('id, remetente, texto, created_at')
+            .eq('lead_id', selLead!.id)
+            .order('created_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('mensagens')
+            .select('id', { count: 'exact', head: true })
+            .eq('lead_id', selLead!.id),
+        ])
         if (error) throw error
-        if (ativo) setMensagensSelLead((data ?? []) as MensagemRow[])
+        if (erroContagem) throw erroContagem
+        if (ativo) {
+          setMensagensSelLead(((data ?? []) as MensagemRow[]).slice().reverse())
+          setTotalMensagensSelLead(count ?? 0)
+        }
       } catch (err) {
         console.error('Erro ao buscar mensagens do lead:', err)
-        if (ativo) setMensagensSelLead([])
+        if (ativo) { setMensagensSelLead([]); setTotalMensagensSelLead(0) }
       } finally {
         if (ativo) setMensagensCarregando(false)
       }
@@ -213,7 +225,8 @@ export default function Dashboard() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Não foi possível enviar a mensagem.')
-      setMensagensSelLead(prev => [...prev, data.mensagem])
+      setMensagensSelLead(prev => [...prev, data.mensagem].slice(-5))
+      setTotalMensagensSelLead(prev => prev + 1)
       setMensagemTexto('')
     } catch (err: any) {
       console.error('Erro ao enviar mensagem:', err)
@@ -415,6 +428,14 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ))
+                )}
+                {!mensagensCarregando && totalMensagensSelLead > 5 && (
+                  <button
+                    onClick={() => onVerConversaCompleta?.(selLead.id)}
+                    style={{ alignSelf:'center', border:'none', background:'none', color:'var(--accent)', fontSize:12.5, fontWeight:600, cursor:'pointer', padding:'6px 4px', fontFamily:'inherit', textDecoration:'underline' }}
+                  >
+                    Ver conversa completa →
+                  </button>
                 )}
               </div>
               <div style={{ display:'flex', gap:10, alignItems:'center', padding:'14px 18px', borderTop:'1px solid var(--line)', background:'var(--card-bg)' }}>

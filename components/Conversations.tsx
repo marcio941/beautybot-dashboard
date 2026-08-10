@@ -44,7 +44,7 @@ const fmtHoraMsg = (iso: string) => {
   } catch { return '' }
 }
 
-export default function Conversations() {
+export default function Conversations({ initialLeadId }: { initialLeadId?: string | null } = {}) {
   const { contaId, loading: perfilCarregando } = useProfile()
 
   const [conversas, setConversas] = useState<ConversaResumo[]>([])
@@ -87,7 +87,7 @@ export default function Conversations() {
           })
         }
         setConversas(resumos)
-        setLeadSelecionado(prev => prev ?? resumos[0] ?? null)
+        setLeadSelecionado(prev => prev ?? resumos.find(r => r.leadId === initialLeadId) ?? resumos[0] ?? null)
       } catch (err) {
         console.error('Erro ao buscar conversas:', err)
         if (ativo) {
