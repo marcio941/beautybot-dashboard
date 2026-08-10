@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null);
     const leadId = body?.leadId;
     const texto = typeof body?.texto === "string" ? body.texto.trim() : "";
+    const isFollowUp = body?.followUp === true;
 
     if (!leadId || !texto) {
       return NextResponse.json({ error: "Informe o lead e o texto da mensagem." }, { status: 400 });
@@ -112,7 +113,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Mensagem enviada, mas houve falha ao registrar no histórico." }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, mensagem });
+    let followUp = null;
+    if (isFollowUp) {
+      const { data: fup, error: fupError } = await supabase
+        .from("follow_ups")
+        .insert({ conta_id: perfil.conta_id, lead_id: leadId, mensagem: texto, canal: "whatsapp" })
+        .select("id, mensagem, enviado_em, canal")
+        .single();
+
+      if (fupError) {
+        console.error("Erro ao registrar follow-up:", fupError);
+        return NextResponse.json({ error: "Mensagem enviada, mas houve falha ao registrar o follow-up." }, { status: 500 });
+      }
+      followUp = fup;
+    }
+
+    return NextResponse.json({ success: true, mensagem, followUp });
   } catch (err: any) {
     console.error("Send message error:", err);
     return NextResponse.json({ error: err.message || "Erro ao enviar mensagem." }, { status: 500 });
