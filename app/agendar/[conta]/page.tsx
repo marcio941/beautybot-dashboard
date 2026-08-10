@@ -12,6 +12,8 @@ type Conta = {
   rotulo_segmento: string | null
   rotulo_profissional: string
   logo_url: string | null
+  cobra_sinal: boolean
+  sinal_valor: number | null
 }
 type Servico = { id: string; nome: string; slug: string; duracao_min: number; preco: number | null }
 type Profissional = { id: string; nome: string; avatar_url: string | null }
@@ -63,7 +65,8 @@ export default function AgendarPage() {
   const [buscandoSlots, setBuscandoSlots] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
-  const [confirmado, setConfirmado] = useState<{ data_legivel: string } | null>(null)
+  const [confirmado, setConfirmado] = useState<{ data_legivel: string; sinal_status?: string } | null>(null)
+  const [telaSinal, setTelaSinal] = useState(false)
 
   useEffect(() => {
     setMontado(true)
@@ -139,6 +142,10 @@ export default function AgendarPage() {
   }, [servicoId])
 
   useEffect(() => {
+    setTelaSinal(false)
+  }, [escolhido])
+
+  useEffect(() => {
     if (conta && servicoId && profissionalPronto) carregarSlots(conta.id, servicoId, profissionalIdEfetivo)
   }, [conta, servicoId, profissionalPronto, profissionalIdEfetivo, carregarSlots])
 
@@ -171,6 +178,11 @@ export default function AgendarPage() {
     setEnviando(true)
     setErro(null)
     try {
+      // TODO(integração de pagamento): quando houver conta e credenciais no
+      // gateway (ex: Asaas), o Pix deve ser cobrado e confirmado AQUI antes
+      // de criar o agendamento — hoje o agendamento já nasce com
+      // sinal_status='pendente' (decidido pelo banco a partir de
+      // contas.cobra_sinal) e sem nenhuma cobrança real ter sido feita.
       const { data, error } = await supabase.rpc('criar_agendamento', {
         p_conta_id: conta.id,
         p_servico_id: servicoId,
@@ -182,7 +194,7 @@ export default function AgendarPage() {
       })
       if (error) throw error
       if (data?.ok) {
-        setConfirmado({ data_legivel: data.data_legivel })
+        setConfirmado({ data_legivel: data.data_legivel, sinal_status: data.sinal_status })
       } else if (data?.erro === 'horario_indisponivel') {
         setErro('Esse horário acabou de ser ocupado. Escolha outro abaixo.')
         await carregarSlots(conta.id, servicoId, profissionalIdEfetivo)
@@ -348,13 +360,20 @@ export default function AgendarPage() {
           </>
         ) : confirmado ? (
           <div className="sucesso">
-            <p className="eyebrow">Agendamento confirmado</p>
+            <p className="eyebrow">
+              {confirmado.sinal_status === 'pendente' ? 'Horário reservado' : 'Agendamento confirmado'}
+            </p>
             <p className="sucesso-data">{confirmado.data_legivel}</p>
             <p className="vazio">
               {servico?.nome} · {conta?.nome}
               <br />
               Guarde esta data. Se precisar remarcar, é só chamar no WhatsApp.
             </p>
+            {confirmado.sinal_status === 'pendente' && (
+              <p className="aviso" style={{ marginTop: 16, textAlign: 'left' }}>
+                Pagamento via Pix em breve — por ora seu horário fica reservado como pendente até a confirmação do sinal.
+              </p>
+            )}
           </div>
         ) : (
           <>
@@ -487,26 +506,58 @@ export default function AgendarPage() {
                   )}
                 </div>
 
-                <p className="rotulo">Seus dados</p>
-                <div className="campo">
-                  <label htmlFor="nome">Nome</label>
-                  <input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="name" />
-                </div>
-                <div className="campo">
-                  <label htmlFor="tel">WhatsApp com DDD</label>
-                  <input
-                    id="tel" inputMode="tel" value={telefone} placeholder="62 99999-9999"
-                    onChange={(e) => setTelefone(e.target.value)} autoComplete="tel"
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="obs">Alguma observação? (opcional)</label>
-                  <textarea id="obs" rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
-                </div>
+                {telaSinal && conta?.cobra_sinal ? (
+                  <>
+                    <div className="resumo" style={{ background: '#FFF3D6' }}>
+                      <strong>Sinal de {moeda(conta.sinal_valor) ?? '—'} necessário para confirmar</strong>
+                      <br />
+                      Isso garante o seu horário.
+                    </div>
+                    <p className="vazio" style={{ marginBottom: 18 }}>
+                      Pagamento via Pix em breve — por ora seu horário fica reservado como pendente.
+                    </p>
 
-                <button type="button" className="cta" disabled={!podeEnviar || enviando} onClick={confirmar}>
-                  {enviando ? 'Confirmando…' : 'Confirmar agendamento'}
-                </button>
+                    <button type="button" className="cta" disabled={enviando} onClick={confirmar}>
+                      {enviando ? 'Confirmando…' : 'Pagar sinal'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTelaSinal(false)}
+                      disabled={enviando}
+                      style={{ width: '100%', marginTop: 10, padding: '12px 0', background: 'none', border: 'none', font: 'inherit', color: 'var(--ink-mute)', cursor: 'pointer' }}
+                    >
+                      Voltar
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="rotulo">Seus dados</p>
+                    <div className="campo">
+                      <label htmlFor="nome">Nome</label>
+                      <input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="name" />
+                    </div>
+                    <div className="campo">
+                      <label htmlFor="tel">WhatsApp com DDD</label>
+                      <input
+                        id="tel" inputMode="tel" value={telefone} placeholder="62 99999-9999"
+                        onChange={(e) => setTelefone(e.target.value)} autoComplete="tel"
+                      />
+                    </div>
+                    <div className="campo">
+                      <label htmlFor="obs">Alguma observação? (opcional)</label>
+                      <textarea id="obs" rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+                    </div>
+
+                    <button
+                      type="button"
+                      className="cta"
+                      disabled={!podeEnviar || enviando}
+                      onClick={() => (conta?.cobra_sinal ? setTelaSinal(true) : confirmar())}
+                    >
+                      {enviando ? 'Confirmando…' : conta?.cobra_sinal ? 'Continuar' : 'Confirmar agendamento'}
+                    </button>
+                  </>
+                )}
               </section>
             )}
           </>

@@ -28,6 +28,22 @@ interface SugestaoRow {
   servicoNome: string | null
   diasAtras: number
   mensagemInicial: string
+  manutencao: boolean
+}
+
+// Não há campo de recorrência esperada por serviço no banco hoje — então a
+// detecção é por palavra-chave no nome do serviço. Um campo do tipo "dias até
+// recomendar retorno" por serviço deixaria isso muito mais preciso (ver aviso
+// no card de sugestão).
+const TERMOS_RECORRENCIA = [
+  'unha', 'unhas', 'esmalta', 'toxina', 'botox', 'preenchimento',
+  'sobrancelha', 'micropigmenta', 'limpeza de pele', 'peeling', 'design de sobrancelha',
+]
+
+function ehServicoRecorrente(nome: string | null): boolean {
+  if (!nome) return false
+  const alvo = nome.toLowerCase()
+  return TERMOS_RECORRENCIA.some((termo) => alvo.includes(termo))
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
@@ -111,6 +127,10 @@ export default function FollowUps() {
             const servicoNome = a.servicos?.nome || null
             const saudacao = nome ? `Oi ${nome}!` : 'Oi!'
             const servicoTexto = servicoNome || 'um atendimento com a gente'
+            const manutencao = ehServicoRecorrente(servicoNome)
+            const mensagemInicial = manutencao
+              ? `${saudacao} Já fazem ${diasAtras} dias desde ${servicoTexto === 'um atendimento com a gente' ? 'seu último atendimento' : servicoTexto}. Geralmente essa é a hora de renovar a manutenção! Quer agendar seu horário? 💅`
+              : `${saudacao} Notei que você fez ${servicoTexto} recentemente. Que tal aproveitar um horário especial para outro cuidado? Me chama se quiser saber mais! 😊`
             return {
               appointmentId: a.id,
               leadId: a.lead_id,
@@ -118,9 +138,11 @@ export default function FollowUps() {
               leadPhone: a.leads?.phone || null,
               servicoNome,
               diasAtras,
-              mensagemInicial: `${saudacao} Notei que você fez ${servicoTexto} recentemente. Que tal aproveitar um horário especial para outro cuidado? Me chama se quiser saber mais! 😊`,
+              mensagemInicial,
+              manutencao,
             }
           })
+          .sort((a, b) => Number(b.manutencao) - Number(a.manutencao))
 
         if (ativo) {
           setSugestoes(candidatos)
@@ -221,8 +243,11 @@ export default function FollowUps() {
   return (
     <div>
       <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 30, color: '#227069', marginBottom: 8 }}>✨ Sugestões de Follow-up</h2>
-      <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 24 }}>
+      <p style={{ color: 'var(--sub)', fontSize: 13, marginBottom: 4 }}>
         Leads que finalizaram um atendimento há pelo menos 3 dias e ainda não receberam um follow-up.
+      </p>
+      <p style={{ color: 'var(--sub)', fontSize: 11.5, marginBottom: 24 }}>
+        🔁 Serviços com padrão de recorrência conhecido (ex: unha, toxina) aparecem destacados como &quot;Hora da manutenção&quot;.
       </p>
 
       {erroSugestoes && (
@@ -242,7 +267,13 @@ export default function FollowUps() {
           {sugestoesVisiveis.map((s) => {
             const enviando = enviandoId === s.appointmentId
             return (
-              <div key={s.appointmentId} style={{ ...card(), padding: '18px 20px' }}>
+              <div
+                key={s.appointmentId}
+                style={{
+                  ...card(), padding: '18px 20px',
+                  ...(s.manutencao ? { border: '1.5px solid #E8A93A', background: '#FFF9EE' } : {}),
+                }}
+              >
                 <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{
                     width: 38, height: 38, borderRadius: '50%', background: '#E7F2F0', color: '#227069',
@@ -254,6 +285,11 @@ export default function FollowUps() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                       <b style={{ fontSize: 13.5 }}>{s.leadName || 'Lead sem nome'}</b>
                       <span style={{ fontSize: 11.5, color: 'var(--sub)' }}>{formatarTelefone(s.leadPhone)}</span>
+                      {s.manutencao && (
+                        <span style={{ background: '#F5C266', color: '#6B4A05', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '2px 9px' }}>
+                          🔁 Hora da manutenção
+                        </span>
+                      )}
                     </div>
                     <p style={{ fontSize: 12.5, color: 'var(--sub)', margin: 0 }}>
                       Fez {s.servicoNome || 'um atendimento'} há {s.diasAtras} {s.diasAtras === 1 ? 'dia' : 'dias'}

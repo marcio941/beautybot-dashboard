@@ -194,6 +194,11 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
   const [regrasSalvando, setRegrasSalvando] = useState(false)
   const [regrasErro, setRegrasErro] = useState<string | null>(null)
 
+  const [cobraSinal, setCobraSinal] = useState(false)
+  const [sinalValor, setSinalValor] = useState('')
+  const [sinalSalvando, setSinalSalvando] = useState(false)
+  const [sinalErro, setSinalErro] = useState<string | null>(null)
+
   // Respostas rápidas
   const [respostas, setRespostas] = useState<RespostaRapidaRow[]>([])
   const [respostasCarregando, setRespostasCarregando] = useState(true)
@@ -325,7 +330,7 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
       try {
         const { data, error } = await supabase
           .from('contas')
-          .select('nome, rotulo_servico, rotulo_segmento, rotulo_profissional, horarios_funcionamento, slot_granularidade_min, antecedencia_minima_horas, antecedencia_maxima_dias')
+          .select('nome, rotulo_servico, rotulo_segmento, rotulo_profissional, horarios_funcionamento, slot_granularidade_min, antecedencia_minima_horas, antecedencia_maxima_dias, cobra_sinal, sinal_valor')
           .eq('id', contaId)
           .single()
         if (error) throw error
@@ -339,6 +344,8 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
         setSlotGranularidade(data?.slot_granularidade_min != null ? String(data.slot_granularidade_min) : '')
         setAntecedenciaMinima(data?.antecedencia_minima_horas != null ? String(data.antecedencia_minima_horas) : '')
         setAntecedenciaMaxima(data?.antecedencia_maxima_dias != null ? String(data.antecedencia_maxima_dias) : '')
+        setCobraSinal(Boolean(data?.cobra_sinal))
+        setSinalValor(data?.sinal_valor != null ? String(data.sinal_valor) : '')
       } catch (err) {
         console.error('Erro ao carregar configurações da conta:', err)
         if (ativo) setConfigErro('Não foi possível carregar as configurações da conta.')
@@ -455,6 +462,33 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
       setRegrasErro('Não foi possível salvar as regras. Tente de novo.')
     } finally {
       setRegrasSalvando(false)
+    }
+  }
+
+  async function salvarSinal() {
+    if (!contaId) return
+    let valor: number | null = null
+    if (cobraSinal) {
+      valor = parseFloat(sinalValor.replace(',', '.'))
+      if (!Number.isFinite(valor) || valor <= 0) {
+        setSinalErro('Informe um valor de sinal maior que zero.')
+        return
+      }
+    }
+
+    setSinalErro(null)
+    setSinalSalvando(true)
+    try {
+      const { error } = await supabase
+        .from('contas')
+        .update({ cobra_sinal: cobraSinal, sinal_valor: valor })
+        .eq('id', contaId)
+      if (error) throw error
+    } catch (err) {
+      console.error('Erro ao salvar configuração de sinal:', err)
+      setSinalErro('Não foi possível salvar a configuração de sinal. Tente de novo.')
+    } finally {
+      setSinalSalvando(false)
     }
   }
 
@@ -701,6 +735,48 @@ export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Pr
 
             <button onClick={salvarRegras} disabled={regrasSalvando || !contaId} style={botaoSalvar(regrasSalvando || !contaId)}>
               {regrasSalvando ? 'Salvando...' : 'Salvar regras'}
+            </button>
+          </>
+        )}
+      </section>
+
+      <section style={secao()}>
+        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Sinal de agendamento</h3>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
+          Se ativado, a página pública pede um sinal antes de confirmar o horário.
+        </p>
+
+        {configCarregando ? (
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando…</p>
+        ) : (
+          <>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, ...campoLabel, marginBottom: 14, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={cobraSinal}
+                onChange={(e) => setCobraSinal(e.target.checked)}
+              />
+              Cobrar sinal para confirmar agendamento
+            </label>
+
+            {cobraSinal && (
+              <label style={campoLabel}>
+                Valor do sinal (R$)
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={sinalValor}
+                  onChange={(e) => setSinalValor(e.target.value)}
+                  placeholder="Ex: 30,00"
+                  style={campoInput}
+                />
+              </label>
+            )}
+
+            {sinalErro && <p style={caixaErro}>{sinalErro}</p>}
+
+            <button onClick={salvarSinal} disabled={sinalSalvando || !contaId} style={botaoSalvar(sinalSalvando || !contaId)}>
+              {sinalSalvando ? 'Salvando...' : 'Salvar sinal'}
             </button>
           </>
         )}

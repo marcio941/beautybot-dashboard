@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
 type StatusAgendamento = 'scheduled' | 'completed' | 'cancelled' | 'no_show'
+type SinalStatus = 'nao_aplicavel' | 'pendente' | 'pago' | 'expirado'
 type Visao = 'lista' | 'calendario'
 type FiltroStatus = 'todos' | StatusAgendamento
 type Periodo = 'dia' | 'semana'
@@ -18,6 +19,7 @@ interface AppointmentRow {
   lead_id: string | null
   name: string | null
   profissional_id: string | null
+  sinal_status: SinalStatus | null
 }
 
 interface ServicoInfo { id: string; nome: string }
@@ -77,6 +79,20 @@ const STATUS_STYLE: Record<StatusAgendamento, { bg: string; color: string }> = {
   completed: { bg: '#DFF7E9', color: '#1E7C46' },
   cancelled: { bg: '#FBE3DF', color: '#B5473A' },
   no_show: { bg: '#ECECEC', color: '#5C5C5C' },
+}
+
+const SINAL_LABEL: Record<SinalStatus, string> = {
+  nao_aplicavel: '',
+  pendente: 'Sinal pendente',
+  pago: 'Sinal pago',
+  expirado: 'Sinal expirado',
+}
+
+const SINAL_STYLE: Record<SinalStatus, { bg: string; color: string }> = {
+  nao_aplicavel: { bg: 'transparent', color: 'transparent' },
+  pendente: { bg: '#FCF3DF', color: '#8A6416' },
+  pago: { bg: '#DFF7E9', color: '#1E7C46' },
+  expirado: { bg: '#FBE3DF', color: '#B5473A' },
 }
 
 const FILTROS: { id: FiltroStatus; label: string }[] = [
@@ -149,6 +165,16 @@ function BadgeStatus({ status }: { status: StatusAgendamento }) {
   )
 }
 
+function BadgeSinal({ status }: { status: SinalStatus | null }) {
+  if (!status || status === 'nao_aplicavel') return null
+  const s = SINAL_STYLE[status]
+  return (
+    <span style={{ background: s.bg, color: s.color, fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '3px 10px', whiteSpace: 'nowrap' }}>
+      {SINAL_LABEL[status]}
+    </span>
+  )
+}
+
 function SeletorStatus({ value, disabled, onChange }: {
   value: StatusAgendamento
   disabled: boolean
@@ -195,7 +221,10 @@ function LinhaAgendamento({ a, atualizando, mostrarProfissional, onMudarStatus, 
       <div style={{ flex: '1 1 210px', fontSize: 12.5, color: '#227069', fontWeight: 600, textTransform: 'capitalize' }}>
         {fmtCompleto.format(new Date(a.appointment_date))}
       </div>
-      <div style={{ flexShrink: 0 }}><BadgeStatus status={a.status} /></div>
+      <div style={{ flexShrink: 0, display: 'flex', gap: 6 }}>
+        <BadgeStatus status={a.status} />
+        <BadgeSinal status={a.sinal_status} />
+      </div>
       <div style={{ flexShrink: 0 }}>
         <SeletorStatus value={a.status} disabled={atualizando} onChange={(s) => onMudarStatus(a.id, s)} />
       </div>
@@ -230,8 +259,9 @@ function ModalDetalhe({ a, atualizando, onFechar, onMudarStatus }: {
           <b>Quando:</b> {fmtCompleto.format(new Date(a.appointment_date))}
         </p>
         {a.notes && <p style={{ fontSize: 13, color: 'var(--ink)', marginBottom: 6 }}><b>Observação:</b> {a.notes}</p>}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
           <BadgeStatus status={a.status} />
+          <BadgeSinal status={a.sinal_status} />
           <SeletorStatus value={a.status} disabled={atualizando} onChange={(s) => onMudarStatus(a.id, s)} />
         </div>
       </div>
@@ -450,7 +480,7 @@ export default function Appointments({ onAbrirConversa }: { onAbrirConversa?: (l
     try {
       const { data, error } = await supabase
         .from('appointments')
-        .select('id, appointment_date, status, notes, servico_id, lead_id, name, profissional_id')
+        .select('id, appointment_date, status, notes, servico_id, lead_id, name, profissional_id, sinal_status')
         .order('appointment_date', { ascending: true })
       if (error) throw error
 
