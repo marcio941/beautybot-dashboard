@@ -20,10 +20,12 @@ export default function Home() {
   const [nomeOverride, setNomeOverride] = useState<string | null | undefined>(undefined)
   const [corOverride, setCorOverride] = useState<string | null | undefined>(undefined)
   const [leadParaConversas, setLeadParaConversas] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const corAtual = (corOverride !== undefined ? corOverride : corDestaque) || '#227069'
 
   const navegar = (v: string) => {
     setLeadParaConversas(null)
+    setSidebarOpen(false)
     setView(v)
   }
 
@@ -47,10 +49,17 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', '--accent': corAtual } as React.CSSProperties}>
-      <Sidebar active={view} onNavigate={navegar} logoOverride={logoOverride} nomeOverride={nomeOverride} />
+      <Sidebar
+        active={view}
+        onNavigate={navegar}
+        logoOverride={logoOverride}
+        nomeOverride={nomeOverride}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <Header logoOverride={logoOverride} onNavigate={navegar} />
-        <main style={{ flex: 1, padding: '28px 30px' }}>
+        <Header logoOverride={logoOverride} onNavigate={navegar} onToggleSidebar={() => setSidebarOpen(v => !v)} />
+        <main className="bb-main" style={{ flex: 1, padding: '28px 30px' }}>
           {renderView()}
         </main>
       </div>

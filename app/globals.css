@@ -43,3 +43,96 @@ html, body {
   color: var(--ink);
   min-height: 100vh;
 }
+
+/* ── Responsivo ───────────────────────────────────────────────
+   O projeto usa estilo inline predominantemente (sem Tailwind
+   instalado). Estilo inline sempre vence sobre CSS de stylesheet,
+   então qualquer propriedade que precise mudar por breakpoint fica
+   de fora do `style={}` dos componentes e é controlada só por estas
+   classes + media query. */
+
+.bb-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 240px;
+  flex-shrink: 0;
+  transform: none;
+  transition: transform .25s ease;
+}
+
+.bb-sidebar-close { display: none; }
+
+.bb-sidebar-backdrop { display: none; }
+
+.bb-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card-bg);
+  color: var(--ink);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bb-header { justify-content: flex-end; }
+
+.bb-greeting { font-size: 30px; }
+
+.bb-kpi-grid { grid-template-columns: repeat(4, 1fr); }
+.bb-fila-chat-grid { grid-template-columns: 340px 1fr; }
+.bb-analytics-grid-2 { grid-template-columns: 1.35fr 1fr; }
+.bb-analytics-grid-3 { grid-template-columns: 1fr 1fr 1.2fr; }
+
+@media (max-width: 1023.98px) {
+  .bb-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 767.98px) {
+  .bb-hamburger { display: flex; }
+  .bb-header { justify-content: space-between; }
+
+  .bb-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(82vw, 300px);
+    height: 100dvh;
+    z-index: 220;
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+  .bb-sidebar.bb-sidebar--open {
+    transform: translateX(0);
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  }
+
+  .bb-sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bb-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,20,18,.45);
+    z-index: 210;
+  }
+
+  .bb-main { padding: 20px 16px !important; }
+
+  .bb-greeting { font-size: 22px; }
+
+  .bb-kpi-grid,
+  .bb-fila-chat-grid,
+  .bb-analytics-grid-2,
+  .bb-analytics-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}

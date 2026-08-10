@@ -28,7 +28,7 @@ export default function ThemeToggle() {
       title={isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
       style={{
         border: '1px solid var(--line)', background: 'var(--card-bg)', color: 'var(--ink)',
-        cursor: 'pointer', width: 38, height: 38, borderRadius: 10,
+        cursor: 'pointer', width: 44, height: 44, borderRadius: 10,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}
     >

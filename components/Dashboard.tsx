@@ -257,7 +257,7 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
       {/* ── Topbar ── */}
       <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:22, flexWrap:'wrap', gap:12 }}>
         <div>
-          <h2 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:30, color:'#227069' }}>
+          <h2 className="bb-greeting" style={{ fontFamily:"'Baloo 2',sans-serif", color:'#227069' }}>
             Bom dia, <span style={{ background:'linear-gradient(0deg,#F6BE4F 0 30%,transparent 30%)', padding:'0 2px' }}>
               {profileLoading ? 'Carregando...' : (userName || 'Usuário')}
             </span>
@@ -286,7 +286,7 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
       </div>
 
       {/* ── KPIs ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))', gap:16, marginBottom:18 }}>
+      <div className="bb-kpi-grid" style={{ display:'grid', gap:16, marginBottom:18 }}>
         {[
           { Icon: Calendar,       v: loading ? '…' : String(apptToday.length),   label:'Agendamentos hoje',  d:'+' },
           { Icon: MessageCircle,  v: loading ? '…' : String(conversas.length),   label:'Conversas ativas',   d:'↑' },
@@ -305,7 +305,7 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
       </div>
 
       {/* ── Fila + Chat ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'340px 1fr', gap:16, marginBottom:18, alignItems:'stretch' }}>
+      <div className="bb-fila-chat-grid" style={{ display:'grid', gap:16, marginBottom:18, alignItems:'stretch' }}>
 
         {/* FILA — agendamentos de hoje + leads em atendimento */}
         <section style={card()}>
@@ -482,7 +482,7 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
       {/* ── Analytics ── */}
       <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:19, color:'#227069', margin:'6px 0 14px' }}>📈 Desempenho da semana</h3>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1.35fr 1fr', gap:16, marginBottom:18 }}>
+      <div className="bb-analytics-grid-2" style={{ display:'grid', gap:16, marginBottom:18 }}>
         {/* Barras */}
         <section style={{ ...card(), padding:'20px 22px' }}>
           <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:16, color:'#227069' }}>Leads por status</h3>
@@ -512,20 +512,22 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
         <section style={{ ...card(), padding:'20px 22px' }}>
           <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:16, color:'#227069' }}>Horários de pico</h3>
           <p style={{ fontSize:11.5, color:'var(--sub)', marginBottom:16 }}>Mensagens por horário (referência)</p>
-          <div style={{ display:'grid', gridTemplateColumns:'34px repeat(14,1fr)', gap:4, alignItems:'center' }}>
-            {HEATMAP_DATA.map((row,di)=>([
-              <span key={`d${di}`} style={{ fontSize:10.5, color:'var(--sub)', fontWeight:600 }}>{DIAS[di]}</span>,
-              ...row.map((v,hi)=>(
-                <div key={`${di}-${hi}`} style={{ aspectRatio:'1', borderRadius:5, background: HEAT_COLORS[v] }} />
-              ))
-            ]))}
-            <span/>
-            {HORAS.map(h=><span key={h} style={{ fontSize:9.5, color:'var(--sub)', textAlign:'center' }}>{h}</span>)}
+          <div style={{ overflowX:'auto' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'34px repeat(14,minmax(26px,1fr))', gap:4, alignItems:'center', minWidth:520 }}>
+              {HEATMAP_DATA.map((row,di)=>([
+                <span key={`d${di}`} style={{ fontSize:10.5, color:'var(--sub)', fontWeight:600, position:'sticky', left:0, background:'var(--card-bg)' }}>{DIAS[di]}</span>,
+                ...row.map((v,hi)=>(
+                  <div key={`${di}-${hi}`} style={{ aspectRatio:'1', borderRadius:5, background: HEAT_COLORS[v] }} />
+                ))
+              ]))}
+              <span style={{ position:'sticky', left:0, background:'var(--card-bg)' }}/>
+              {HORAS.map(h=><span key={h} style={{ fontSize:9.5, color:'var(--sub)', textAlign:'center' }}>{h}</span>)}
+            </div>
           </div>
         </section>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1.2fr', gap:16, marginBottom:32 }}>
+      <div className="bb-analytics-grid-3" style={{ display:'grid', gap:16, marginBottom:32 }}>
         {/* Funil real */}
         <section style={{ ...card(), padding:'20px 22px' }}>
           <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:16, color:'#227069' }}>Funil de leads</h3>

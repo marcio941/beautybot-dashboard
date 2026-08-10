@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { LayoutDashboard, Calendar, MessageCircle, Kanban, Sparkles, Repeat, Settings } from 'lucide-react'
+import { LayoutDashboard, Calendar, MessageCircle, Kanban, Sparkles, Repeat, Settings, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -19,15 +19,35 @@ interface Props {
   onNavigate: (id: string) => void
   logoOverride?: string | null
   nomeOverride?: string | null
+  open?: boolean
+  onClose?: () => void
 }
 
-export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride }: Props) {
+export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride, open = false, onClose }: Props) {
   const supabase = createClient()
   const { accountName, contaId, logoUrl, loading: profileLoading } = useProfile()
   const nomeContaAtual = nomeOverride !== undefined ? nomeOverride : accountName
   const displayAccount = profileLoading ? 'Carregando...' : (nomeContaAtual || 'Sua conta')
   const avatarInicialConta = nomeContaAtual ? nomeContaAtual.trim().charAt(0).toUpperCase() : '?'
   const logoParaExibir = logoOverride !== undefined ? logoOverride : logoUrl
+
+  useEffect(() => {
+    if (!open) return
+    function aoPressionarTecla(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose?.()
+    }
+    document.addEventListener('keydown', aoPressionarTecla)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', aoPressionarTecla)
+      document.body.style.overflow = ''
+    }
+  }, [open, onClose])
+
+  function navegarEFechar(id: string) {
+    onNavigate(id)
+    onClose?.()
+  }
 
   const [conversasCount, setConversasCount] = useState(0)
 
@@ -106,18 +126,30 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
   useEffect(() => pararPolling, [])
 
   return (
-    <aside style={{
-      width: 240, flexShrink: 0,
-      background: 'linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 82%, white))',
-      color: '#fff', display: 'flex', flexDirection: 'column',
-      padding: '26px 16px 20px',
-      borderRadius: '0 22px 22px 0',
-      position: 'sticky', top: 0, height: '100vh',
-    }}>
+    <>
+      {open && <div className="bb-sidebar-backdrop" onClick={onClose} />}
+      <aside className={`bb-sidebar${open ? ' bb-sidebar--open' : ''}`} style={{
+        background: 'linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 82%, white))',
+        color: '#fff', display: 'flex', flexDirection: 'column',
+        padding: '26px 16px 20px',
+        borderRadius: '0 22px 22px 0',
+      }}>
+
+      <button
+        onClick={onClose}
+        aria-label="Fechar menu"
+        className="bb-sidebar-close"
+        style={{
+          position: 'absolute', top: 14, right: 14, width: 36, height: 36, borderRadius: 10,
+          border: 'none', background: 'rgba(255,255,255,.16)', color: '#fff', cursor: 'pointer',
+        }}
+      >
+        <X size={18} />
+      </button>
 
       {/* Brand: logo/avatar + nome da conta */}
       <button
-        onClick={() => onNavigate('dashboard')}
+        onClick={() => navegarEFechar('dashboard')}
         style={{
           display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px 22px',
           border: 'none', background: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
@@ -152,7 +184,7 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
         style={{
           background: 'rgba(255,255,255,.16)', border: '1px solid rgba(255,255,255,.3)',
           borderRadius: 12, padding: '9px 12px', fontSize: 12, fontWeight: 600,
-          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 26,
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 26, minHeight: 44,
           width: '100%', cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
         }}
       >
@@ -175,7 +207,7 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => navegarEFechar(item.id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 color: isActive ? 'var(--accent)' : '#fff',
@@ -183,6 +215,7 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
                 border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: 13.5, fontWeight: isActive ? 600 : 500,
                 padding: '11px 12px', borderRadius: 12, textAlign: 'left', width: '100%',
+                minHeight: 44,
                 boxShadow: isActive ? '0 6px 16px rgba(15,55,50,.18)' : 'none',
                 transition: 'all .15s',
               }}
@@ -206,13 +239,13 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000,
+            zIndex: 1000, padding: 16,
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#fff', borderRadius: 20, padding: 28, width: 320,
+              background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 320,
               textAlign: 'center', color: '#1c1c1c', fontFamily: 'inherit',
             }}
           >
@@ -251,6 +284,7 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
           </div>
         </div>
       )}
-    </aside>
+      </aside>
+    </>
   )
 }
