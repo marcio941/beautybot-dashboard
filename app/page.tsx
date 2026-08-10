@@ -49,7 +49,7 @@ export default function Home() {
     <div style={{ display: 'flex', minHeight: '100vh', '--accent': corAtual } as React.CSSProperties}>
       <Sidebar active={view} onNavigate={navegar} logoOverride={logoOverride} nomeOverride={nomeOverride} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <Header logoOverride={logoOverride} />
+        <Header logoOverride={logoOverride} onNavigate={navegar} />
         <main style={{ flex: 1, padding: '28px 30px' }}>
           {renderView()}
         </main>

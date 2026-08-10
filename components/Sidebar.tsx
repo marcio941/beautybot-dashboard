@@ -1,16 +1,17 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { LayoutDashboard, Calendar, MessageCircle, Kanban, Sparkles, Repeat, Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useProfile } from '@/lib/hooks/useProfile'
 
 const NAV = [
-  { id: 'dashboard',     icon: '▦', label: 'Visão Geral',     badge: 0 },
-  { id: 'appointments',  icon: '🗓', label: 'Agendamentos',    badge: 0 },
-  { id: 'conversations', icon: '💬', label: 'Conversas',       badge: 0 },
-  { id: 'kanban',        icon: '📋', label: 'Kanban de Leads', badge: 0 },
-  { id: 'services',      icon: '✨', label: 'Serviços',        badge: 0 },
-  { id: 'followups',     icon: '🔁', label: 'Follow-ups',      badge: 0 },
-  { id: 'settings',      icon: '⚙', label: 'Configurações',   badge: 0 },
+  { id: 'dashboard',     icon: LayoutDashboard, label: 'Visão Geral',     badge: 0 },
+  { id: 'appointments',  icon: Calendar,         label: 'Agendamentos',    badge: 0 },
+  { id: 'conversations', icon: MessageCircle,    label: 'Conversas',       badge: 0 },
+  { id: 'kanban',        icon: Kanban,           label: 'Kanban de Leads', badge: 0 },
+  { id: 'services',      icon: Sparkles,         label: 'Serviços',        badge: 0 },
+  { id: 'followups',     icon: Repeat,           label: 'Follow-ups',      badge: 0 },
+  { id: 'settings',      icon: Settings,         label: 'Configurações',   badge: 0 },
 ]
 
 interface Props {
@@ -170,6 +171,7 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
         {NAV.map(item => {
           const isActive = active === item.id
           const badge = item.id === 'conversations' ? conversasCount : item.badge
+          const Icon = item.icon
           return (
             <button
               key={item.id}
@@ -185,7 +187,7 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
                 transition: 'all .15s',
               }}
             >
-              <span>{item.icon}</span>
+              <Icon size={17} strokeWidth={2} style={{ flexShrink: 0 }} />
               <span style={{ flex: 1 }}>{item.label}</span>
               {badge > 0 && (
                 <span style={{
