@@ -52,8 +52,8 @@ function BadgeOrigem({ origem }: { origem: string | null }) {
   const outbound = origem === 'outbound'
   return (
     <span style={{
-      background: outbound ? '#EDE4FC' : '#E7F2F0',
-      color: outbound ? '#6A3BC0' : '#227069',
+      background: outbound ? '#EDE4FC' : 'var(--mist)',
+      color: outbound ? '#6A3BC0' : 'var(--accent)',
       fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '3px 10px', whiteSpace: 'nowrap',
     }}>
       {outbound ? '🎯 Prospecção' : '💬 WhatsApp'}

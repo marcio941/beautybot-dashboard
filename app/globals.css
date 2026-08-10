@@ -21,6 +21,8 @@
   --card-bg: #ffffff;
   --mist: #F2F7F6;
   --page-bg: linear-gradient(160deg, #F4F6F5 0%, #EAF2F0 60%, #DDEBE8 100%);
+
+  --accent: #227069;
 }
 
 :root.dark {

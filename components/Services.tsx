@@ -156,7 +156,7 @@ export default function Services() {
           onClick={abrirNovo}
           disabled={!contaId}
           style={{
-            border: 'none', cursor: 'pointer', background: '#227069', color: '#fff',
+            border: 'none', cursor: 'pointer', background: 'var(--accent)', color: '#fff',
             fontFamily: 'inherit', fontSize: 13, fontWeight: 600, padding: '11px 18px',
             borderRadius: 12, boxShadow: '0 6px 16px rgba(34,112,105,.3)',
             opacity: !contaId ? 0.6 : 1,
@@ -305,7 +305,7 @@ export default function Services() {
                 onClick={salvar}
                 disabled={salvando}
                 style={{
-                  flex: 1, border: 'none', background: '#227069', color: '#fff',
+                  flex: 1, border: 'none', background: 'var(--accent)', color: '#fff',
                   fontFamily: 'inherit', fontSize: 13, fontWeight: 600, padding: '11px 0',
                   borderRadius: 10, cursor: salvando ? 'wait' : 'pointer', opacity: salvando ? 0.7 : 1,
                 }}

@@ -7,7 +7,11 @@ import { useProfile } from '@/lib/hooks/useProfile'
 interface Props {
   onLogoChange?: (url: string | null) => void
   onNomeChange?: (nome: string | null) => void
+  onCorChange?: (cor: string | null) => void
 }
+
+const COR_PADRAO = '#227069'
+const HEX_REGEX = /^#[0-9a-fA-F]{6}$/
 
 interface DiaHorario {
   fechado: boolean
@@ -54,7 +58,7 @@ const campoInput: React.CSSProperties = {
 }
 
 const botaoSalvar = (desabilitado: boolean): React.CSSProperties => ({
-  background: '#227069', color: '#fff', border: 'none', borderRadius: 10,
+  background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 10,
   padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: desabilitado ? 'wait' : 'pointer',
   opacity: desabilitado ? 0.6 : 1, marginTop: 16,
 })
@@ -63,8 +67,8 @@ const caixaErro: React.CSSProperties = {
   background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13, marginTop: 12,
 }
 
-export default function Settings({ onLogoChange, onNomeChange }: Props) {
-  const { contaId, logoUrl, loading: perfilCarregando } = useProfile()
+export default function Settings({ onLogoChange, onNomeChange, onCorChange }: Props) {
+  const { contaId, logoUrl, corDestaque, loading: perfilCarregando } = useProfile()
 
   // Logo (existente, não alterado)
   const [logoAtual, setLogoAtual] = useState<string | null>(null)
@@ -75,6 +79,38 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
   useEffect(() => {
     if (!perfilCarregando) setLogoAtual(logoUrl)
   }, [perfilCarregando, logoUrl])
+
+  // Cor de destaque
+  const [corAtual, setCorAtual] = useState(COR_PADRAO)
+  const [corSalvando, setCorSalvando] = useState(false)
+  const [corErro, setCorErro] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!perfilCarregando) setCorAtual(corDestaque || COR_PADRAO)
+  }, [perfilCarregando, corDestaque])
+
+  async function salvarCor() {
+    if (!contaId) return
+    const hex = corAtual.trim()
+    if (!HEX_REGEX.test(hex)) {
+      setCorErro('Informe uma cor hexadecimal válida (ex: #0f766e).')
+      return
+    }
+
+    setCorErro(null)
+    setCorSalvando(true)
+    try {
+      const { error } = await supabase.from('contas').update({ cor_destaque: hex }).eq('id', contaId)
+      if (error) throw error
+      setCorAtual(hex)
+      onCorChange?.(hex)
+    } catch (err) {
+      console.error('Erro ao salvar cor de destaque:', err)
+      setCorErro('Não foi possível salvar a cor. Tente de novo.')
+    } finally {
+      setCorSalvando(false)
+    }
+  }
 
   async function handleArquivoSelecionado(e: React.ChangeEvent<HTMLInputElement>) {
     const arquivo = e.target.files?.[0]
@@ -340,6 +376,45 @@ export default function Settings({ onLogoChange, onNomeChange }: Props) {
           <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>
             {erro}
           </p>
+        )}
+      </section>
+
+      <section style={secao()}>
+        <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 18, color: '#227069', margin: '0 0 4px' }}>Cor de destaque</h3>
+        <p style={{ color: 'var(--sub)', fontSize: 13, margin: '0 0 16px' }}>
+          Personaliza a cor de marca usada na barra lateral e nos botões principais.
+        </p>
+
+        {perfilCarregando ? (
+          <p style={{ color: 'var(--sub)', fontSize: 13 }}>Carregando…</p>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input
+                type="color"
+                value={HEX_REGEX.test(corAtual) ? corAtual : COR_PADRAO}
+                onChange={(e) => setCorAtual(e.target.value)}
+                style={{
+                  width: 44, height: 40, border: '1.5px solid var(--line)', borderRadius: 8,
+                  padding: 2, cursor: 'pointer', background: 'var(--card-bg)', flexShrink: 0,
+                }}
+              />
+              <input
+                type="text"
+                value={corAtual}
+                onChange={(e) => setCorAtual(e.target.value)}
+                placeholder={COR_PADRAO}
+                maxLength={7}
+                style={{ ...campoInput, marginTop: 0, width: 120 }}
+              />
+            </div>
+
+            {corErro && <p style={caixaErro}>{corErro}</p>}
+
+            <button onClick={salvarCor} disabled={corSalvando || !contaId} style={botaoSalvar(corSalvando || !contaId)}>
+              {corSalvando ? 'Salvando...' : 'Salvar cor'}
+            </button>
+          </>
         )}
       </section>
 

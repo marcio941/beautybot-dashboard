@@ -32,8 +32,8 @@ function BadgeOrigem({ origem }: { origem: string | null }) {
   const outbound = origem === 'outbound'
   return (
     <span style={{
-      background: outbound ? '#EDE4FC' : '#E7F2F0',
-      color: outbound ? '#6A3BC0' : '#227069',
+      background: outbound ? '#EDE4FC' : 'var(--mist)',
+      color: outbound ? '#6A3BC0' : 'var(--accent)',
       fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '3px 10px', whiteSpace: 'nowrap',
     }}>
       {outbound ? '🎯 Prospecção' : '💬 WhatsApp'}
@@ -81,7 +81,7 @@ function Coluna({ categoria, leads, onAbrir }: { categoria: string; leads: LeadR
     <div style={{ width: 264, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 6px 10px' }}>
         <b style={{ fontSize: 13, color: '#227069', textTransform: 'capitalize' }}>{categoria}</b>
-        <span style={{ background: '#E7F2F0', color: '#227069', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '2px 8px' }}>
+        <span style={{ background: 'var(--mist)', color: 'var(--accent)', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '2px 8px' }}>
           {leads.length}
         </span>
       </div>

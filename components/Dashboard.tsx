@@ -441,7 +441,7 @@ export default function Dashboard() {
                 <button
                   onClick={enviarMensagem}
                   disabled={enviandoMensagem || !mensagemTexto.trim()}
-                  style={{ border:'none', width:44, height:44, borderRadius:14, background: enviandoMensagem || !mensagemTexto.trim() ? 'var(--sub)' : '#2E8F87', color:'#fff', fontSize:17, boxShadow:'0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer' }}
+                  style={{ border:'none', width:44, height:44, borderRadius:14, background: enviandoMensagem || !mensagemTexto.trim() ? 'var(--sub)' : 'var(--accent)', color:'#fff', fontSize:17, boxShadow:'0 6px 14px rgba(46,143,135,.35)', cursor: enviandoMensagem || !mensagemTexto.trim() ? 'default' : 'pointer' }}
                 >
                   {enviandoMensagem ? '…' : '➤'}
                 </button>

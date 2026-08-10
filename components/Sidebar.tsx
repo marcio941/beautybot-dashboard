@@ -107,7 +107,7 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
   return (
     <aside style={{
       width: 240, flexShrink: 0,
-      background: 'linear-gradient(180deg, #2E8F87, #3AA79D)',
+      background: 'linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 82%, white))',
       color: '#fff', display: 'flex', flexDirection: 'column',
       padding: '26px 16px 20px',
       borderRadius: '0 22px 22px 0',
@@ -176,7 +176,7 @@ export default function Sidebar({ active, onNavigate, logoOverride, nomeOverride
               onClick={() => onNavigate(item.id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12,
-                color: isActive ? '#227069' : '#fff',
+                color: isActive ? 'var(--accent)' : '#fff',
                 background: isActive ? '#fff' : 'none',
                 border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: 13.5, fontWeight: isActive ? 600 : 500,

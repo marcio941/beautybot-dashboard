@@ -294,7 +294,7 @@ export default function FollowUps() {
                     onClick={() => enviarSugestao(s)}
                     disabled={enviando}
                     style={{
-                      background: '#227069', color: '#fff', border: 'none', borderRadius: 10,
+                      background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 10,
                       padding: '8px 16px', fontSize: 12.5, fontWeight: 600, cursor: enviando ? 'not-allowed' : 'pointer',
                       opacity: enviando ? 0.7 : 1,
                     }}
