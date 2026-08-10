@@ -1,4 +1,5 @@
 'use client'
+import { CircleUserRound } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -16,27 +17,42 @@ export default function LoginPage() {
   return (
     <div
       style={{
+        position: 'relative',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
-        background: `
-          radial-gradient(circle at 18% 18%, rgba(46,143,135,.20), transparent 42%),
-          radial-gradient(circle at 82% 78%, rgba(58,167,157,.16), transparent 45%),
-          linear-gradient(180deg,#F6FAF9,#EDF4F2)
-        `,
+        overflow: 'hidden',
+        background: 'linear-gradient(160deg,#0c0a20,#1a1140 45%,#0b1230)',
       }}
     >
+      {/* Fundo atmosférico: manchas de luz roxo/azul desfocadas para dar profundidade */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: -120,
+          background: `
+            radial-gradient(circle at 20% 22%, rgba(139,92,246,.55), transparent 45%),
+            radial-gradient(circle at 82% 18%, rgba(56,79,220,.45), transparent 48%),
+            radial-gradient(circle at 75% 82%, rgba(99,50,180,.5), transparent 50%),
+            radial-gradient(circle at 12% 85%, rgba(30,64,175,.4), transparent 45%)
+          `,
+          filter: 'blur(90px)',
+        }}
+      />
+
       <div
         style={{
           position: 'relative',
-          background: 'rgba(255,255,255,.62)',
+          zIndex: 1,
+          background: 'rgba(255,255,255,.08)',
           backdropFilter: 'blur(22px)',
           WebkitBackdropFilter: 'blur(22px)',
-          border: '1px solid rgba(255,255,255,.75)',
+          border: '1px solid rgba(255,255,255,.16)',
           borderRadius: 28,
-          boxShadow: '0 30px 70px rgba(20,60,55,.16), inset 0 1px 0 rgba(255,255,255,.6)',
+          boxShadow: '0 30px 70px rgba(5,5,20,.5), inset 0 1px 0 rgba(255,255,255,.12)',
           padding: '44px 38px',
           textAlign: 'center',
           maxWidth: 380,
@@ -45,25 +61,24 @@ export default function LoginPage() {
       >
         <div
           style={{
-            width: 52,
-            height: 52,
+            width: 56,
+            height: 56,
             margin: '0 auto 22px',
-            borderRadius: 16,
-            background: 'linear-gradient(135deg,#2E8F87,#3AA79D)',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg,#7C5CFC,#4C6FE0)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            fontSize: 24,
-            boxShadow: '0 12px 26px rgba(46,143,135,.35)',
+            boxShadow: '0 12px 26px rgba(92,67,230,.45)',
           }}
         >
-          ✦
+          <CircleUserRound size={30} strokeWidth={1.75} />
         </div>
-        <h1 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 24, color: '#1B4A45', marginBottom: 8 }}>
+        <h1 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 24, color: '#fff', marginBottom: 8 }}>
           Painel de Atendimento
         </h1>
-        <p style={{ fontSize: 13, color: '#6E807D', marginBottom: 30, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,.65)', marginBottom: 30, lineHeight: 1.5 }}>
           Entre com sua conta Google para acessar o painel
         </p>
         <button
@@ -82,7 +97,7 @@ export default function LoginPage() {
             fontSize: 14,
             fontWeight: 600,
             color: '#1f2937',
-            boxShadow: '0 8px 20px rgba(20,60,55,.12)',
+            boxShadow: '0 8px 20px rgba(5,5,20,.35)',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
