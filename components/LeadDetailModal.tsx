@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, MessageCircle, Stethoscope, AlertTriangle, Camera, Target } from 'lucide-react'
+import { X, MessageCircle, Stethoscope, AlertTriangle, Camera, Target, History, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -17,6 +17,8 @@ export interface LeadRow {
   score_motivo: string | null
   dores: unknown[] | null
   gancho: string | null
+  tags: string[] | null
+  valor_potencial: number | null
 }
 
 interface MensagemRow {
@@ -49,6 +51,14 @@ interface ServicoOpcao {
   nome: string
 }
 
+interface HistoricoEtapaRow {
+  id: string
+  etapa_anterior: string | null
+  nova_etapa: string
+  usuario: string | null
+  created_at: string
+}
+
 const campoInputStyle: React.CSSProperties = {
   fontFamily: 'inherit', fontSize: 12.5, border: '1.5px solid var(--line)',
   borderRadius: 10, padding: '7px 10px', background: 'var(--card-bg)', color: 'var(--ink)',
@@ -78,6 +88,20 @@ const fmtHoraMsg = (iso: string) => {
   } catch { return '' }
 }
 
+const fmtDataHoraEtapa = (iso: string) => {
+  try {
+    const d = new Date(iso)
+    const data = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    return `${data} às ${hora}`
+  } catch { return '' }
+}
+
+const fmtValorPotencial = (valor: number | null) => {
+  if (valor == null) return '—'
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 function BadgeOrigem({ origem }: { origem: string | null }) {
   const outbound = origem === 'outbound'
   return (
@@ -93,15 +117,16 @@ function BadgeOrigem({ origem }: { origem: string | null }) {
   )
 }
 
-export default function LeadDetailModal({ lead, categorias, atualizando, onFechar, onMudarStatus }: {
+export default function LeadDetailModal({ lead, categorias, atualizando, onFechar, onMudarStatus, onAtualizarLead }: {
   lead: LeadRow | null
   categorias: string[]
   atualizando: boolean
   onFechar: () => void
   onMudarStatus: (id: string, status: string) => void
+  onAtualizarLead: (id: string, patch: { tags: string[]; valor_potencial: number | null }) => void
 }) {
   const { contaId } = useProfile()
-  const [aba, setAba] = useState<'conversa' | 'procedimentos'>('conversa')
+  const [aba, setAba] = useState<'conversa' | 'procedimentos' | 'historico'>('conversa')
 
   const [mensagens, setMensagens] = useState<MensagemRow[]>([])
   const [mensagensCarregando, setMensagensCarregando] = useState(false)
@@ -128,6 +153,16 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
   const [uploadArquivo, setUploadArquivo] = useState<File | null>(null)
   const [enviandoFoto, setEnviandoFoto] = useState(false)
   const [erroFoto, setErroFoto] = useState<string | null>(null)
+
+  const [editTags, setEditTags] = useState<string[]>([])
+  const [novaTag, setNovaTag] = useState('')
+  const [editValorPotencial, setEditValorPotencial] = useState('')
+  const [salvandoTagsValor, setSalvandoTagsValor] = useState(false)
+  const [erroTagsValor, setErroTagsValor] = useState<string | null>(null)
+
+  const [historicoEtapas, setHistoricoEtapas] = useState<HistoricoEtapaRow[]>([])
+  const [carregandoHistoricoEtapas, setCarregandoHistoricoEtapas] = useState(false)
+  const [erroHistoricoEtapas, setErroHistoricoEtapas] = useState<string | null>(null)
 
   useEffect(() => {
     if (!lead) return
@@ -200,6 +235,34 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
   }, [lead])
 
   useEffect(() => {
+    if (!lead) return
+    let ativo = true
+    async function carregarHistoricoEtapas() {
+      setCarregandoHistoricoEtapas(true)
+      setErroHistoricoEtapas(null)
+      try {
+        const { data, error } = await supabase
+          .from('lead_stage_history')
+          .select('id, etapa_anterior, nova_etapa, usuario, created_at')
+          .eq('lead_id', lead!.id)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        if (ativo) setHistoricoEtapas((data ?? []) as HistoricoEtapaRow[])
+      } catch (err) {
+        console.error('Erro ao buscar histórico de movimentação:', err)
+        if (ativo) {
+          setErroHistoricoEtapas('Não foi possível carregar o histórico de movimentação.')
+          setHistoricoEtapas([])
+        }
+      } finally {
+        if (ativo) setCarregandoHistoricoEtapas(false)
+      }
+    }
+    carregarHistoricoEtapas()
+    return () => { ativo = false }
+  }, [lead])
+
+  useEffect(() => {
     let ativo = true
     async function gerarUrls() {
       const entradas = await Promise.all(fotos.map(async (f) => {
@@ -245,6 +308,10 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
     setUploadConsentimento(false)
     setUploadArquivo(null)
     setErroFoto(null)
+    setEditTags(lead?.tags ?? [])
+    setNovaTag('')
+    setEditValorPotencial(lead?.valor_potencial != null ? String(lead.valor_potencial) : '')
+    setErroTagsValor(null)
   }, [lead?.id])
 
   async function adicionarHistorico() {
@@ -328,6 +395,43 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
     }
   }
 
+  function adicionarTagModal() {
+    const t = novaTag.trim()
+    if (!t || editTags.includes(t)) { setNovaTag(''); return }
+    setEditTags((prev) => [...prev, t])
+    setNovaTag('')
+  }
+
+  function removerTagModal(tag: string) {
+    setEditTags((prev) => prev.filter((t) => t !== tag))
+  }
+
+  async function salvarTagsValor() {
+    if (!lead) return
+    setSalvandoTagsValor(true)
+    setErroTagsValor(null)
+    try {
+      const bruto = editValorPotencial.trim()
+      const valorNum = bruto === '' ? null : Number(bruto.replace(',', '.'))
+      if (valorNum !== null && Number.isNaN(valorNum)) {
+        setErroTagsValor('Valor potencial inválido.')
+        setSalvandoTagsValor(false)
+        return
+      }
+      const { error } = await supabase
+        .from('leads')
+        .update({ tags: editTags, valor_potencial: valorNum })
+        .eq('id', lead.id)
+      if (error) throw error
+      onAtualizarLead(lead.id, { tags: editTags, valor_potencial: valorNum })
+    } catch (err) {
+      console.error('Erro ao salvar tags e valor potencial:', err)
+      setErroTagsValor('Não foi possível salvar. Tente de novo.')
+    } finally {
+      setSalvandoTagsValor(false)
+    }
+  }
+
   if (!lead) return null
 
   const doresTexto = Array.isArray(lead.dores) && lead.dores.length > 0
@@ -394,6 +498,74 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
           </div>
         )}
 
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {editTags.length === 0 ? (
+              <span style={{ fontSize: 11.5, color: 'var(--sub)' }}>Nenhuma tag.</span>
+            ) : editTags.map((tag) => (
+              <span
+                key={tag}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--mist)',
+                  border: '1px solid var(--line)', borderRadius: 8, padding: '3px 8px', fontSize: 11,
+                }}
+              >
+                {tag}
+                <button
+                  onClick={() => removerTagModal(tag)}
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', color: 'var(--sub)', padding: 0 }}
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <input
+              type="text"
+              value={novaTag}
+              onChange={(e) => setNovaTag(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarTagModal() } }}
+              placeholder="Nova tag…"
+              style={{ ...campoInputStyle, flex: 1 }}
+            />
+            <button
+              onClick={adicionarTagModal}
+              style={{
+                border: 'none', background: 'var(--mist)', borderRadius: 10, width: 32, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#227069',
+              }}
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--sub)', whiteSpace: 'nowrap' }}>Valor potencial (R$)</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              value={editValorPotencial}
+              onChange={(e) => setEditValorPotencial(e.target.value)}
+              placeholder="0,00"
+              style={{ ...campoInputStyle, width: 110 }}
+            />
+          </div>
+          {erroTagsValor && (
+            <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '6px 10px', fontSize: 12, margin: '0 0 8px' }}>{erroTagsValor}</p>
+          )}
+          <button
+            onClick={salvarTagsValor}
+            disabled={salvandoTagsValor}
+            style={{
+              fontFamily: 'inherit', fontSize: 12, fontWeight: 700, border: 'none', borderRadius: 10,
+              padding: '7px 14px', background: salvandoTagsValor ? 'var(--sub)' : '#227069', color: '#fff',
+              cursor: salvandoTagsValor ? 'wait' : 'pointer', opacity: salvandoTagsValor ? 0.65 : 1,
+            }}
+          >
+            {salvandoTagsValor ? 'Salvando…' : 'Salvar tags e valor'}
+          </button>
+        </div>
+
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           <button
             onClick={() => setAba('conversa')}
@@ -420,6 +592,19 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
           >
             <Stethoscope size={14} />
             Procedimentos
+          </button>
+          <button
+            onClick={() => setAba('historico')}
+            style={{
+              flex: 1, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
+              padding: '8px 10px', borderRadius: 10, border: aba === 'historico' ? 'none' : '1px solid var(--line)',
+              background: aba === 'historico' ? '#227069' : 'var(--card-bg)',
+              color: aba === 'historico' ? '#fff' : 'var(--sub)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            <History size={14} />
+            Histórico
           </button>
         </div>
 
@@ -451,7 +636,7 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
               ))
             )}
           </div>
-        ) : (
+        ) : aba === 'procedimentos' ? (
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ background: 'var(--mist)', borderRadius: 14, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ fontSize: 12.5, fontWeight: 700, color: '#227069' }}>Nova entrada</div>
@@ -588,6 +773,32 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
                   </div>
                 )
               })
+            )}
+          </div>
+        ) : (
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {carregandoHistoricoEtapas ? (
+              <p style={{ color: 'var(--sub)', fontSize: 13, textAlign: 'center' }}>Carregando histórico…</p>
+            ) : erroHistoricoEtapas ? (
+              <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>{erroHistoricoEtapas}</p>
+            ) : historicoEtapas.length === 0 ? (
+              <p style={{ color: 'var(--sub)', fontSize: 13, textAlign: 'center' }}>Nenhuma movimentação registrada ainda.</p>
+            ) : (
+              historicoEtapas.map((h) => (
+                <div key={h.id} style={{ background: 'var(--mist)', borderRadius: 12, padding: '10px 12px' }}>
+                  <p style={{ fontSize: 12.5, margin: 0, color: 'var(--ink)' }}>
+                    {h.etapa_anterior ? (
+                      <>{h.etapa_anterior} → <b>{h.nova_etapa}</b></>
+                    ) : (
+                      <>Lead criado em <b>{h.nova_etapa}</b></>
+                    )}
+                    {', em '}{fmtDataHoraEtapa(h.created_at)}
+                  </p>
+                  {h.usuario && (
+                    <span style={{ fontSize: 11, color: 'var(--sub)' }}>por {h.usuario}</span>
+                  )}
+                </div>
+              ))
             )}
           </div>
         )}

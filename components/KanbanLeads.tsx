@@ -21,6 +21,11 @@ const card = (style?: React.CSSProperties): React.CSSProperties => ({
   boxShadow: 'var(--shadow)', ...style,
 })
 
+const fmtValorPotencial = (valor: number | null) => {
+  if (valor == null) return null
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 const formatarTelefone = (phone: string | null) => {
   if (!phone) return '—'
   return phone
@@ -71,8 +76,21 @@ function CardLead({ lead, onAbrir }: { lead: LeadRow; onAbrir: (id: string) => v
           <span style={{ fontSize: 11, color: 'var(--sub)' }}>{formatarTelefone(lead.phone)}</span>
         </div>
       </div>
-      <div style={{ marginTop: 8 }}>
+      <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
         <BadgeOrigem origem={lead.origem} />
+        {lead.valor_potencial != null && (
+          <span style={{ background: '#DFF7E9', color: '#1E7C46', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '3px 8px', whiteSpace: 'nowrap' }}>
+            {fmtValorPotencial(lead.valor_potencial)}
+          </span>
+        )}
+        {(lead.tags ?? []).slice(0, 2).map((tag) => (
+          <span key={tag} style={{ background: 'var(--mist)', color: 'var(--sub)', fontSize: 10, fontWeight: 600, borderRadius: 8, padding: '3px 8px', whiteSpace: 'nowrap' }}>
+            {tag}
+          </span>
+        ))}
+        {(lead.tags?.length ?? 0) > 2 && (
+          <span style={{ fontSize: 10, color: 'var(--sub)' }}>+{lead.tags!.length - 2}</span>
+        )}
       </div>
     </div>
   )
@@ -124,7 +142,7 @@ export default function KanbanLeads() {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select('id, name, phone, status, origem, created_at, nicho, score, score_motivo, dores, gancho')
+        .select('id, name, phone, status, origem, created_at, nicho, score, score_motivo, dores, gancho, tags, valor_potencial')
         .order('created_at', { ascending: false })
       if (error) throw error
       setLeads((data ?? []) as LeadRow[])
@@ -156,6 +174,10 @@ export default function KanbanLeads() {
       setAtualizandoId(null)
     }
   }, [leads])
+
+  function atualizarLeadLocal(id: string, patch: { tags: string[]; valor_potencial: number | null }) {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)))
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -228,6 +250,7 @@ export default function KanbanLeads() {
         atualizando={detalhe ? atualizandoId === detalhe.id : false}
         onFechar={() => setDetalheId(null)}
         onMudarStatus={moverLead}
+        onAtualizarLead={atualizarLeadLocal}
       />
     </div>
   )

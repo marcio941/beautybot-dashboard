@@ -20,6 +20,8 @@ interface Lead {
   dores: unknown[] | null
   gancho: string | null
   atendimento_humano: boolean | null
+  tags: string[] | null
+  valor_potencial: number | null
 }
 
 interface MensagemRow {
@@ -234,6 +236,10 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
     } finally {
       setEnviandoMensagem(false)
     }
+  }
+
+  function atualizarLeadLocal(id: string, patch: { tags: string[]; valor_potencial: number | null }) {
+    setLeads(prev => prev.map(l => (l.id === id ? { ...l, ...patch } : l)))
   }
 
   async function mudarStatusLead(id: string, novoStatus: string) {
@@ -613,6 +619,7 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
         atualizando={fichaLeadId ? atualizandoLeadId === fichaLeadId : false}
         onFechar={() => setFichaLeadId(null)}
         onMudarStatus={mudarStatusLead}
+        onAtualizarLead={atualizarLeadLocal}
       />
 
       <style>{`@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(155,108,240,.25)}50%{box-shadow:0 0 0 10px rgba(155,108,240,0)}}`}</style>
