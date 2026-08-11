@@ -86,12 +86,14 @@ html, body {
 /* 5 métricas: só usamos contagens de coluna que não deixam 1 card
    sozinho na última linha (5, 3 ou 1 — nunca 2 ou 4). */
 .bb-kpi-grid { grid-template-columns: repeat(5, 1fr); }
+.bb-resultado-grid { grid-template-columns: repeat(4, 1fr); }
 .bb-fila-chat-grid { grid-template-columns: 340px 1fr; }
 .bb-analytics-grid-2 { grid-template-columns: 1.35fr 1fr; }
 .bb-analytics-grid-3 { grid-template-columns: 1fr 1fr 1.2fr; }
 
 @media (max-width: 1279.98px) {
   .bb-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .bb-resultado-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 767.98px) {
@@ -132,6 +134,7 @@ html, body {
   .bb-greeting { font-size: 22px; }
 
   .bb-kpi-grid,
+  .bb-resultado-grid,
   .bb-fila-chat-grid,
   .bb-analytics-grid-2,
   .bb-analytics-grid-3 {

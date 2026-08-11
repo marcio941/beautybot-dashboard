@@ -14,7 +14,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { LayoutGrid, Target, MessageCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
-import LeadDetailModal, { LeadRow } from '@/components/LeadDetailModal'
+import LeadDetailModal, { LeadRow, LeadPatch } from '@/components/LeadDetailModal'
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
   background: 'var(--card-bg)', borderRadius: 22,
@@ -142,7 +142,7 @@ export default function KanbanLeads() {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select('id, name, phone, status, origem, created_at, nicho, score, score_motivo, dores, gancho, tags, valor_potencial')
+        .select('id, name, phone, status, origem, created_at, nicho, score, score_motivo, dores, gancho, tags, valor_potencial, resultado, valor_fechado, resultado_data')
         .order('created_at', { ascending: false })
       if (error) throw error
       setLeads((data ?? []) as LeadRow[])
@@ -175,7 +175,7 @@ export default function KanbanLeads() {
     }
   }, [leads])
 
-  function atualizarLeadLocal(id: string, patch: { tags: string[]; valor_potencial: number | null }) {
+  function atualizarLeadLocal(id: string, patch: LeadPatch) {
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)))
   }
 

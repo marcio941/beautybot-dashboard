@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, MessageCircle, Stethoscope, AlertTriangle, Camera, Target, History, Plus } from 'lucide-react'
+import { X, MessageCircle, Stethoscope, AlertTriangle, Camera, Target, History, Plus, CheckCircle2, XCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
 
@@ -19,7 +19,12 @@ export interface LeadRow {
   gancho: string | null
   tags: string[] | null
   valor_potencial: number | null
+  resultado: 'ganho' | 'perdido' | null
+  valor_fechado: number | null
+  resultado_data: string | null
 }
+
+export type LeadPatch = Partial<Pick<LeadRow, 'tags' | 'valor_potencial' | 'resultado' | 'valor_fechado' | 'resultado_data'>>
 
 interface MensagemRow {
   id: string
@@ -123,7 +128,7 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
   atualizando: boolean
   onFechar: () => void
   onMudarStatus: (id: string, status: string) => void
-  onAtualizarLead: (id: string, patch: { tags: string[]; valor_potencial: number | null }) => void
+  onAtualizarLead: (id: string, patch: LeadPatch) => void
 }) {
   const { contaId } = useProfile()
   const [aba, setAba] = useState<'conversa' | 'procedimentos' | 'historico'>('conversa')
@@ -163,6 +168,11 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
   const [historicoEtapas, setHistoricoEtapas] = useState<HistoricoEtapaRow[]>([])
   const [carregandoHistoricoEtapas, setCarregandoHistoricoEtapas] = useState(false)
   const [erroHistoricoEtapas, setErroHistoricoEtapas] = useState<string | null>(null)
+
+  const [marcandoGanho, setMarcandoGanho] = useState(false)
+  const [valorFechadoInput, setValorFechadoInput] = useState('')
+  const [salvandoResultado, setSalvandoResultado] = useState(false)
+  const [erroResultado, setErroResultado] = useState<string | null>(null)
 
   useEffect(() => {
     if (!lead) return
@@ -312,6 +322,9 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
     setNovaTag('')
     setEditValorPotencial(lead?.valor_potencial != null ? String(lead.valor_potencial) : '')
     setErroTagsValor(null)
+    setMarcandoGanho(false)
+    setValorFechadoInput(lead?.valor_potencial != null ? String(lead.valor_potencial) : '')
+    setErroResultado(null)
   }, [lead?.id])
 
   async function adicionarHistorico() {
@@ -432,6 +445,53 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
     }
   }
 
+  async function confirmarGanho() {
+    if (!lead) return
+    const bruto = valorFechadoInput.trim()
+    const valorNum = bruto === '' ? null : Number(bruto.replace(',', '.'))
+    if (valorNum === null || Number.isNaN(valorNum)) {
+      setErroResultado('Informe um valor fechado válido.')
+      return
+    }
+    setSalvandoResultado(true)
+    setErroResultado(null)
+    try {
+      const agora = new Date().toISOString()
+      const { error } = await supabase
+        .from('leads')
+        .update({ resultado: 'ganho', valor_fechado: valorNum, resultado_data: agora })
+        .eq('id', lead.id)
+      if (error) throw error
+      onAtualizarLead(lead.id, { resultado: 'ganho', valor_fechado: valorNum, resultado_data: agora })
+      setMarcandoGanho(false)
+    } catch (err) {
+      console.error('Erro ao marcar lead como ganho:', err)
+      setErroResultado('Não foi possível salvar. Tente de novo.')
+    } finally {
+      setSalvandoResultado(false)
+    }
+  }
+
+  async function marcarPerdido() {
+    if (!lead) return
+    setSalvandoResultado(true)
+    setErroResultado(null)
+    try {
+      const agora = new Date().toISOString()
+      const { error } = await supabase
+        .from('leads')
+        .update({ resultado: 'perdido', resultado_data: agora })
+        .eq('id', lead.id)
+      if (error) throw error
+      onAtualizarLead(lead.id, { resultado: 'perdido', resultado_data: agora })
+    } catch (err) {
+      console.error('Erro ao marcar lead como perdido:', err)
+      setErroResultado('Não foi possível salvar. Tente de novo.')
+    } finally {
+      setSalvandoResultado(false)
+    }
+  }
+
   if (!lead) return null
 
   const doresTexto = Array.isArray(lead.dores) && lead.dores.length > 0
@@ -486,6 +546,83 @@ export default function LeadDetailModal({ lead, categorias, atualizando, onFecha
           >
             {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          {lead.resultado === 'ganho' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#DFF7E9', color: '#1E7C46', borderRadius: 12, padding: '9px 12px', fontSize: 12.5, fontWeight: 700 }}>
+              <CheckCircle2 size={15} />
+              Ganho — {fmtValorPotencial(lead.valor_fechado)}{lead.resultado_data ? ` em ${fmtData(lead.resultado_data)}` : ''}
+            </div>
+          ) : lead.resultado === 'perdido' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FBE3DF', color: '#B5473A', borderRadius: 12, padding: '9px 12px', fontSize: 12.5, fontWeight: 700 }}>
+              <XCircle size={15} />
+              Perdido{lead.resultado_data ? ` em ${fmtData(lead.resultado_data)}` : ''}
+            </div>
+          ) : marcandoGanho ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--mist)', border: '1px solid var(--line)', borderRadius: 12, padding: 12 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink)' }}>Valor fechado (R$)</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                autoFocus
+                value={valorFechadoInput}
+                onChange={(e) => setValorFechadoInput(e.target.value)}
+                style={campoInputStyle}
+              />
+              {erroResultado && (
+                <p style={{ background: '#FDECEF', color: '#8C2340', borderRadius: 10, padding: '6px 10px', fontSize: 12, margin: 0 }}>{erroResultado}</p>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={confirmarGanho}
+                  disabled={salvandoResultado}
+                  style={{
+                    flex: 1, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, border: 'none', borderRadius: 10,
+                    padding: '7px 10px', background: salvandoResultado ? 'var(--sub)' : '#1E7C46', color: '#fff',
+                    cursor: salvandoResultado ? 'wait' : 'pointer',
+                  }}
+                >
+                  {salvandoResultado ? 'Salvando…' : 'Confirmar ganho'}
+                </button>
+                <button
+                  onClick={() => { setMarcandoGanho(false); setErroResultado(null) }}
+                  disabled={salvandoResultado}
+                  style={{
+                    fontFamily: 'inherit', fontSize: 12, fontWeight: 700, border: '1px solid var(--line)', borderRadius: 10,
+                    padding: '7px 10px', background: 'var(--card-bg)', color: 'var(--sub)', cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => { setMarcandoGanho(true); setErroResultado(null) }}
+                disabled={salvandoResultado}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  fontFamily: 'inherit', fontSize: 12, fontWeight: 700, border: 'none', borderRadius: 10,
+                  padding: '8px 10px', background: '#1E7C46', color: '#fff', cursor: salvandoResultado ? 'wait' : 'pointer',
+                }}
+              >
+                <CheckCircle2 size={14} /> Marcar como ganho
+              </button>
+              <button
+                onClick={marcarPerdido}
+                disabled={salvandoResultado}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  fontFamily: 'inherit', fontSize: 12, fontWeight: 700, border: 'none', borderRadius: 10,
+                  padding: '8px 10px', background: '#B5473A', color: '#fff', cursor: salvandoResultado ? 'wait' : 'pointer',
+                }}
+              >
+                <XCircle size={14} /> {salvandoResultado ? 'Salvando…' : 'Marcar como perdido'}
+              </button>
+            </div>
+          )}
         </div>
 
         {temEnriquecimento && (

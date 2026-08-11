@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Calendar, MessageCircle, Headset, UserPlus, Users, Sparkles, StickyNote, CalendarClock, ArrowRight, Send, TrendingUp } from 'lucide-react'
+import { Calendar, MessageCircle, Headset, UserPlus, Users, Sparkles, StickyNote, CalendarClock, ArrowRight, Send, TrendingUp, DollarSign, Wallet, Percent, Receipt } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useProfile } from '@/lib/hooks/useProfile'
-import LeadDetailModal from '@/components/LeadDetailModal'
+import LeadDetailModal, { LeadPatch } from '@/components/LeadDetailModal'
 
 /* ─── tipos ─── */
 interface Lead {
@@ -22,6 +22,9 @@ interface Lead {
   atendimento_humano: boolean | null
   tags: string[] | null
   valor_potencial: number | null
+  resultado: 'ganho' | 'perdido' | null
+  valor_fechado: number | null
+  resultado_data: string | null
 }
 
 interface MensagemRow {
@@ -79,6 +82,17 @@ const fmtHora = (iso: string) => {
   catch { return '—' }
 }
 
+const fmtBRL = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+function inicioDoPeriodo(period: string): Date {
+  const agora = new Date()
+  if (period === 'today') return new Date(agora.getFullYear(), agora.getMonth(), agora.getDate())
+  const dias = period === '30d' ? 30 : 7
+  const inicio = new Date(agora)
+  inicio.setDate(inicio.getDate() - dias)
+  return inicio
+}
+
 const STATUS_COR: Record<string, string> = {
   scheduled: '#37C977', confirmed: '#37C977',
   pending: '#F6BE4F', cancelled: '#F07B6B',
@@ -121,6 +135,23 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
   const leadsNovos = leads.filter(l => l.status === 'novo').length
   const emAtend    = leads.filter(l => l.status === 'em atendimento').length
   const totalLeads = leads.length
+
+  /* ── resultado comercial (respeita filtro de período) ── */
+  const periodoInicio = inicioDoPeriodo(period)
+  const leadsCriadosNoPeriodo = leads.filter(l => new Date(l.created_at) >= periodoInicio)
+  const leadsGanhosNoPeriodo  = leadsCriadosNoPeriodo.filter(l => l.resultado === 'ganho')
+  const leadsFechadosNoPeriodo = leads.filter(l => l.resultado === 'ganho' && l.resultado_data && new Date(l.resultado_data) >= periodoInicio)
+
+  const receitaPotencial  = leadsCriadosNoPeriodo
+    .filter(l => l.resultado == null)
+    .reduce((soma, l) => soma + (l.valor_potencial ?? 0), 0)
+  const receitaConfirmada = leadsFechadosNoPeriodo.reduce((soma, l) => soma + (l.valor_fechado ?? 0), 0)
+  const taxaConversao = leadsCriadosNoPeriodo.length > 0
+    ? (leadsGanhosNoPeriodo.length / leadsCriadosNoPeriodo.length) * 100
+    : null
+  const ticketMedio = leadsFechadosNoPeriodo.length > 0
+    ? receitaConfirmada / leadsFechadosNoPeriodo.length
+    : null
 
   useEffect(() => {
     async function load() {
@@ -238,7 +269,7 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
     }
   }
 
-  function atualizarLeadLocal(id: string, patch: { tags: string[]; valor_potencial: number | null }) {
+  function atualizarLeadLocal(id: string, patch: LeadPatch) {
     setLeads(prev => prev.map(l => (l.id === id ? { ...l, ...patch } : l)))
   }
 
@@ -305,6 +336,27 @@ export default function Dashboard({ onVerConversaCompleta }: { onVerConversaComp
               <k.Icon size={18} color="#227069" />
             </div>
             <b style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:25 }}>{k.v}</b>
+            <span style={{ display:'block', fontSize:12, color:'var(--sub)', marginTop:2 }}>{k.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Resultado comercial ── */}
+      <h3 style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:19, color:'#227069', margin:'6px 0 14px', display:'flex', alignItems:'center', gap:8 }}>
+        <DollarSign size={18} /> Resultado comercial
+      </h3>
+      <div className="bb-resultado-grid" style={{ display:'grid', gap:16, marginBottom:18 }}>
+        {[
+          { Icon: DollarSign, v: loading ? '…' : fmtBRL(receitaPotencial),  label:'Receita potencial' },
+          { Icon: Wallet,     v: loading ? '…' : fmtBRL(receitaConfirmada), label:'Receita confirmada' },
+          { Icon: Percent,    v: loading ? '…' : (taxaConversao == null ? '—' : `${taxaConversao.toFixed(1)}%`), label:'Taxa de conversão' },
+          { Icon: Receipt,    v: loading ? '…' : (ticketMedio == null ? '—' : fmtBRL(ticketMedio)), label:'Ticket médio' },
+        ].map(k=>(
+          <div key={k.label} style={{ ...card(), padding:'18px 20px', position:'relative' }}>
+            <div style={{ width:38, height:38, borderRadius:12, background:'#E7F2F0', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>
+              <k.Icon size={18} color="#227069" />
+            </div>
+            <b style={{ fontFamily:"'Baloo 2',sans-serif", fontSize:22 }}>{k.v}</b>
             <span style={{ display:'block', fontSize:12, color:'var(--sub)', marginTop:2 }}>{k.label}</span>
           </div>
         ))}
